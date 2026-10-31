@@ -2,19 +2,26 @@ import { Big } from 'big.js';
 
 const NUMERIC = /^-?\d+(\.\d+)?$/;
 
+/** Número o string numérico a Big, pasando por string para no operar nunca con el float. */
+function toBig(value: unknown): Big | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return new Big(String(value));
+  if (typeof value === 'string' && NUMERIC.test(value.trim())) return new Big(value.trim());
+  return null;
+}
+
 /**
- * Convierte un precio que llega de la API a Big. null si no hay precio usable:
- * inválido, no finito o <= 0 (la API manda last_price: 0 como defecto).
- * Se pasa por string para no operar nunca con el float.
+ * Precio que llega de la API. null si no es usable: inválido, no finito o <= 0
+ * (la API manda last_price: 0 como defecto).
  */
 export function parsePrice(value: unknown): Big | null {
-  let text: string;
-  if (typeof value === 'number' && Number.isFinite(value)) text = String(value);
-  else if (typeof value === 'string' && NUMERIC.test(value.trim())) text = value.trim();
-  else return null;
+  const price = toBig(value);
+  return price?.gt(0) ? price : null;
+}
 
-  const price = new Big(text);
-  return price.gt(0) ? price : null;
+/** Monto que llega de la API (ej. efectivo). Admite 0; null si es inválido o negativo. */
+export function parseAmount(value: unknown): Big | null {
+  const amount = toBig(value);
+  return amount?.gte(0) ? amount : null;
 }
 
 /** Retorno en % entre el último precio y el cierre. null si falta algún dato o el cierre es 0. */

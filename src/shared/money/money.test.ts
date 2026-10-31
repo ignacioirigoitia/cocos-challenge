@@ -1,6 +1,34 @@
 import { Big } from 'big.js';
 
-import { calcPosition, calcReturnPct, formatARS, formatPct, parsePrice } from './money';
+import {
+  calcPosition,
+  calcReturnPct,
+  formatARS,
+  formatPct,
+  parseAmount,
+  parsePrice,
+} from './money';
+
+describe('parseAmount', () => {
+  it('acepta un monto con decimales', () => {
+    expect(parseAmount(999972.88)?.toString()).toBe('999972.88');
+  });
+
+  it('acepta el 0: un efectivo en 0 es un valor válido', () => {
+    expect(parseAmount(0)?.toString()).toBe('0');
+  });
+
+  it.each([-1, NaN, Infinity, null, undefined, '', 'abc', {}])(
+    'devuelve null para un valor inválido o negativo: %p',
+    (value) => {
+      expect(parseAmount(value)).toBeNull();
+    },
+  );
+
+  it('parsePrice sigue rechazando el 0 (un precio en 0 es un dato roto)', () => {
+    expect(parsePrice(0)).toBeNull();
+  });
+});
 
 describe('calcPosition', () => {
   const q = (n: string) => new Big(n);

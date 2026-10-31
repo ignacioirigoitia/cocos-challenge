@@ -1,0 +1,13 @@
+{
+  "cash": 999972.88,
+  "holdings": [
+    {
+      "instrument_id": 16,
+      "ticker": "GARO",
+      "quantity": 1,
+      "last_price": 27.12,
+      "close_price": 24.44,
+      "avg_cost_price": 27.12
+    }
+  ]
+}

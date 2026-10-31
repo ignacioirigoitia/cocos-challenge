@@ -23,7 +23,12 @@ Origen: pruebas propias con `curl` (solo GET) + el `qa-challenge.md` del mismo r
 - Búsqueda vacía y las demás queries probadas (`DY`, `MIRG`) coinciden con `off`.
 - Los defectos que distinguen un nivel de otro no aparecen en estos GET; probablemente estén en `/portfolio` con posiciones y en `/orders`. Pendiente de verificar al llegar a esas features.
 
+## Verificado con una compra real (1 x GARO, MARKET, modo off)
+- `POST /orders` → `{id, candidate_id, instrument_id, side, type, quantity, price, status, created_at}`. En una orden `MARKET` el `price` devuelto es el precio de ejecución (27.12 = último precio). Estado `FILLED`.
+- `GET /portfolio` → `{cash, holdings: [{instrument_id, ticker, quantity, last_price, close_price, avg_cost_price}]}`. `cash` descuenta lo comprado (1.000.000 - 27,12 = 999972.88).
+- `GET /orders` → array de órdenes con la misma forma que la respuesta del POST.
+- Fixture real: `src/features/portfolio/__fixtures__/portfolio.real.json`.
+
 ## Sin verificar (QA)
-- `holdings[]`: `{ticker, quantity, last_price, close_price, avg_cost_price}`.
-- `POST /orders` devuelve `id` y `status`. `LIMIT` siempre nace `PENDING` y luego puede pasar a `FILLED`/`REJECTED` de forma aleatoria. Las órdenes reservan saldo.
-- `POST /reset` borra la cuenta. **No usarlo ni mandar órdenes de prueba** (decisión de Ignacio).
+- `LIMIT` siempre nace `PENDING` y luego puede pasar a `FILLED`/`REJECTED` de forma aleatoria. Las órdenes reservan saldo.
+- `POST /reset` borra la cuenta. Una sola orden de prueba fue autorizada por Ignacio; no se mandan más sin su permiso.
