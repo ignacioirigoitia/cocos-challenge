@@ -50,3 +50,23 @@ Al armar la plantilla de Expo saqué las dependencias web y el código de ejempl
 Los precios de un mercado cambian todo el tiempo y el usuario tiene que enterarse casi de inmediato. Pensé en hacer un fetch cada 5 segundos para actualizarlos, pero lo descarté por tres razones. Primero, entra en contradicción con tratar a la API como externa con rate limit: serían 12 pedidos por minuto por cada pantalla abierta, y no sé qué límite tiene. Segundo, esta API devuelve precios fijos, así que el polling no iba a mostrar ningún cambio. Tercero, hacerlo bien (que se pause en segundo plano, que frene ante un error o un 429) agrega bastante complejidad para un resultado que ni se ve.
 
 Por eso dejé las lecturas con un caché de 1 minuto y el pull to refresh para actualizar a mano. Soy consciente de que un precio de hace un minuto es viejo para una app de trading. En un caso real lo resolvería con WebSockets: el servidor manda los cambios apenas ocurren, sin pedidos repetidos, y es la forma correcta para un dato que cambia tan seguido.
+
+Los precios los guardo como Big dentro del caché de React Query y no como strings. Así TypeScript no me deja sumar o multiplicar un precio con + o * por error: la regla de no usar floats la garantiza el compilador y no depende de que yo me acuerde. Descarté guardar strings y convertir a Big recién al calcular, porque alguien podría hacer Number(precio) en una pantalla y volver el problema de los floats sin que nada avise. El costo que acepto es que React Query no compara objetos Big en profundidad, entonces cada refetch puede re-renderizar la lista. Con 26 instrumentos no se nota.
+
+Validé la respuesta de forma estricta en lo estructural y tolerante en los precios. Si a un instrumento le falta el ticker o el id, rechazo toda la respuesta como formato inesperado, porque eso significa que no es confiable. Si solo el precio viene mal (0, null o texto), ese instrumento se muestra con "--" y el resto funciona normal, porque es un defecto conocido de la API y la app puede convivir con él. Descarté ignorar solo el instrumento roto y seguir, porque esconde errores de la API que conviene ver.
+
+Las lecturas se reintentan 2 veces ante problemas de red, timeout o error 5xx, pero el POST de una orden nunca se reintenta, y lo dejé fijado con un test. Si el POST falla por red no sé si el servidor llegó a recibirlo, y reintentar podría duplicar una compra o una venta. Prefiero mostrarle el error al usuario y que decida si vuelve a intentar.
+
+El modo de bugs forma parte de la clave del caché. Si no estuviera, al pasar de off a hard la app seguiría mostrando los datos viejos de off y no se vería el efecto del cambio. El selector vive en Ajustes y solo aparece en desarrollo (__DEV__), así no queda expuesto en una build de producción.
+
+Para probar los 4 valores de X-Enable-Bugs guardé las respuestas reales de /instruments de cada modo como datos de prueba. Vi que easy, medium y hard son iguales entre sí y solo cambian a MIRG, que llega con last_price en 0. Los tests verifican que la app muestra "--" y que nunca aparece NaN, Infinity ni -100%. Para asegurarme de que sirven rompí la regla a propósito y vi cómo fallaban 6 tests. También encontré que /search es inconsistente con /instruments en esos modos (devuelve MIRG con su precio normal y la búsqueda de "ars" vuelve vacía), eso lo voy a resolver en la búsqueda.
+
+La barra de pestañas la había armado sin íconos pero no me gustó cómo quedaba, así que sumé @expo/vector-icons.
+
+### Portfolio
+
+Para construir la pantalla necesitaba ver una respuesta real con una posición, pero mi cuenta estaba vacía. Elegí hacer una compra de prueba de 1 acción de GARO en vez de armar el esquema con datos inventados, para no asumir nombres de campos que después no coincidan. La orden la tuve que ejecutar yo, porque el sistema de permisos bloqueó que la hiciera Claude al ser una escritura en un sistema externo. Con eso confirmé la forma real de la respuesta y que el efectivo cierra (1.000.000 menos 27,12).
+
+Cuando una posición no tiene precio, el total del portfolio muestra "--" en vez de sumar solo las que sí tienen. Descarté mostrar un total parcial porque es un número que se puede malinterpretar, y es coherente con la regla del "--" que ya tenía para los instrumentos. El efectivo se muestra siempre aparte, porque ese dato sí es confiable.
+
+El efectivo puede ser 0 de forma legítima, a diferencia de un precio, que si es 0 es un dato roto. Por eso separé el parseo de montos del de precios. Y la cantidad de una posición tiene que ser un entero positivo, si no rechazo la respuesta, mientras que un precio roto solo deja sin valor a esa posición.
