@@ -14,7 +14,10 @@
     "format:check": "prettier --check ."
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "setupFiles": [
+      "<rootDir>/jest.setup.js"
+    ]
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.0",
