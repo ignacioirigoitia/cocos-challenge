@@ -42,3 +42,11 @@ Preferí utilizar npm en vez de yarn o pnpm porque al tener que ejecutarse en un
 El CI corre los 4 checks básicos que necesitamos para no romper código compartido y seguir una misma línea de código: typecheck (errores de tipos), lint (errores comunes), formato (estilo consistente) y tests (que no se rompa la lógica).
 
 Al armar la plantilla de Expo saqué las dependencias web y el código de ejemplo que traía. También fijé react-dom a la misma versión que react, porque si no npm me tiraba un conflicto de dependencias con expo-router.
+
+## Etapa 4. Features
+
+### Instrumentos
+
+Los precios de un mercado cambian todo el tiempo y el usuario tiene que enterarse casi de inmediato. Pensé en hacer un fetch cada 5 segundos para actualizarlos, pero lo descarté por tres razones. Primero, entra en contradicción con tratar a la API como externa con rate limit: serían 12 pedidos por minuto por cada pantalla abierta, y no sé qué límite tiene. Segundo, esta API devuelve precios fijos, así que el polling no iba a mostrar ningún cambio. Tercero, hacerlo bien (que se pause en segundo plano, que frene ante un error o un 429) agrega bastante complejidad para un resultado que ni se ve.
+
+Por eso dejé las lecturas con un caché de 1 minuto y el pull to refresh para actualizar a mano. Soy consciente de que un precio de hace un minuto es viejo para una app de trading. En un caso real lo resolvería con WebSockets: el servidor manda los cambios apenas ocurren, sin pedidos repetidos, y es la forma correcta para un dato que cambia tan seguido.
