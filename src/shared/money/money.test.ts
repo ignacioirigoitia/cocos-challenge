@@ -1,6 +1,49 @@
 import { Big } from 'big.js';
 
-import { calcReturnPct, formatARS, formatPct, parsePrice } from './money';
+import { calcPosition, calcReturnPct, formatARS, formatPct, parsePrice } from './money';
+
+describe('calcPosition', () => {
+  const q = (n: string) => new Big(n);
+
+  it('calcula valor de mercado, ganancia y rendimiento con ganancia', () => {
+    const p = calcPosition(q('10'), q('27.12'), q('25'));
+
+    expect(p.marketValue?.toString()).toBe('271.2');
+    expect(p.gain?.toString()).toBe('21.2');
+    expect(p.returnPct?.round(2).toString()).toBe('8.48');
+  });
+
+  it('calcula una pérdida con valores negativos', () => {
+    const p = calcPosition(q('10'), q('27.12'), q('30'));
+
+    expect(p.gain?.toString()).toBe('-28.8');
+    expect(p.returnPct?.round(2).toString()).toBe('-9.6');
+  });
+
+  it('es exacto donde los floats fallan (3 x 0.1 contra 0.2 de costo)', () => {
+    const p = calcPosition(q('3'), q('0.1'), q('0.2'));
+
+    expect(p.marketValue?.toString()).toBe('0.3');
+    expect(p.gain?.toString()).toBe('-0.3');
+    expect(p.returnPct?.toString()).toBe('-50');
+  });
+
+  it('sin último precio: todo queda sin dato, no en 0', () => {
+    const p = calcPosition(q('10'), null, q('25'));
+
+    expect(p.marketValue).toBeNull();
+    expect(p.gain).toBeNull();
+    expect(p.returnPct).toBeNull();
+  });
+
+  it('sin costo promedio válido: hay valor de mercado pero no ganancia ni rendimiento', () => {
+    const p = calcPosition(q('10'), q('27.12'), null);
+
+    expect(p.marketValue?.toString()).toBe('271.2');
+    expect(p.gain).toBeNull();
+    expect(p.returnPct).toBeNull();
+  });
+});
 
 describe('parsePrice', () => {
   it('convierte un número de la API a Big sin perder los decimales', () => {

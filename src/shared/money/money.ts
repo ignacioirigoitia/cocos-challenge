@@ -23,6 +23,29 @@ export function calcReturnPct(last: Big | null, close: Big | null): Big | null {
   return last.minus(close).div(close).times(100);
 }
 
+export interface PositionValues {
+  marketValue: Big | null;
+  gain: Big | null;
+  returnPct: Big | null;
+}
+
+/**
+ * Valor de mercado (cantidad x último precio), ganancia en $ y rendimiento en %
+ * contra el costo promedio. Lo que no se puede calcular queda en null, nunca en 0.
+ */
+export function calcPosition(
+  quantity: Big,
+  lastPrice: Big | null,
+  avgCostPrice: Big | null,
+): PositionValues {
+  const marketValue = lastPrice ? quantity.times(lastPrice) : null;
+  if (!marketValue || !avgCostPrice) return { marketValue, gain: null, returnPct: null };
+
+  const cost = quantity.times(avgCostPrice);
+  const gain = marketValue.minus(cost);
+  return { marketValue, gain, returnPct: cost.eq(0) ? null : gain.div(cost).times(100) };
+}
+
 const NO_DATA = '--';
 
 function round2(value: Big): Big {
