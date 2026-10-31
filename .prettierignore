@@ -1,0 +1,7 @@
+node_modules
+.expo
+.superpowers
+dist
+coverage
+package-lock.json
+*.md

@@ -1,4 +1,4 @@
-import Big from 'big.js';
+import { Big } from 'big.js';
 
 // Test de caracterización: documenta por qué el dinero se opera con big.js y no con floats.
 describe('precisión decimal', () => {
