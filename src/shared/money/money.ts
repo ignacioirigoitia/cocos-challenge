@@ -68,6 +68,13 @@ export function formatARS(value: Big | null): string {
   return `${rounded.lt(0) ? '-' : ''}$ ${withThousands},${dec}`;
 }
 
+/** Como formatARS pero con "+" en las ganancias: "+$ 21,20". "--" si no hay dato. */
+export function formatSignedARS(value: Big | null): string {
+  if (!value) return NO_DATA;
+  const text = formatARS(value);
+  return round2(value).gt(0) ? `+${text}` : text;
+}
+
 /** "+7,99%" / "-8,69%" / "0,00%". "--" si no hay dato. */
 export function formatPct(value: Big | null): string {
   if (!value) return NO_DATA;

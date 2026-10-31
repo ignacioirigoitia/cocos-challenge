@@ -5,6 +5,7 @@ import {
   calcReturnPct,
   formatARS,
   formatPct,
+  formatSignedARS,
   parseAmount,
   parsePrice,
 } from './money';
@@ -105,6 +106,24 @@ describe('formatARS', () => {
 
   it('muestra "--" si no hay dato', () => {
     expect(formatARS(null)).toBe('--');
+  });
+});
+
+describe('formatSignedARS', () => {
+  it('agrega + a las ganancias', () => {
+    expect(formatSignedARS(new Big('21.2'))).toBe('+$ 21,20');
+  });
+
+  it('mantiene el - de las pérdidas', () => {
+    expect(formatSignedARS(new Big('-28.8'))).toBe('-$ 28,80');
+  });
+
+  it('el 0 va sin signo', () => {
+    expect(formatSignedARS(new Big('0'))).toBe('$ 0,00');
+  });
+
+  it('muestra "--" si no hay dato', () => {
+    expect(formatSignedARS(null)).toBe('--');
   });
 });
 
