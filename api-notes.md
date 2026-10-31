@@ -16,6 +16,13 @@ Origen: pruebas propias con `curl` (solo GET) + el `qa-challenge.md` del mismo r
 - `GET /orders` (cuenta nueva): `[]`.
 - Los errores vienen como `{"error": "..."}` con 400.
 
+## Comparación por modo de bugs (solo GET de lectura, 3 pedidos por modo, resultados deterministas)
+- `/instruments`: `off` es la línea base. `easy`, `medium` y `hard` son idénticos entre sí y solo difieren en `MIRG` (`last_price: 0`). Las respuestas están grabadas en `src/features/instruments/__fixtures__/`.
+- `/search` con `easy|medium|hard`: **no** reproduce el precio 0 de MIRG (devuelve 40.88), así que es inconsistente con `/instruments` en el mismo modo.
+- `/search?query=ars` devuelve `[]` con `easy|medium|hard` (con `off` devuelve ARS).
+- Búsqueda vacía y las demás queries probadas (`DY`, `MIRG`) coinciden con `off`.
+- Los defectos que distinguen un nivel de otro no aparecen en estos GET; probablemente estén en `/portfolio` con posiciones y en `/orders`. Pendiente de verificar al llegar a esas features.
+
 ## Sin verificar (QA)
 - `holdings[]`: `{ticker, quantity, last_price, close_price, avg_cost_price}`.
 - `POST /orders` devuelve `id` y `status`. `LIMIT` siempre nace `PENDING` y luego puede pasar a `FILLED`/`REJECTED` de forma aleatoria. Las órdenes reservan saldo.
