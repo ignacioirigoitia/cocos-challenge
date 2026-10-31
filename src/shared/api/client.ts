@@ -33,7 +33,8 @@ export function createApiClient({
   baseUrl,
   getHeaders,
   timeoutMs = 10_000,
-  fetchImpl = fetch,
+  // Se resuelve en cada pedido (no al crear el cliente) para poder reemplazar fetch, ej. en tests.
+  fetchImpl = (...args) => fetch(...args),
 }: ApiClientConfig) {
   async function request<T>(
     method: 'GET' | 'POST',
