@@ -5,7 +5,7 @@ Cada etapa se cierra con: app corriendo, chequeos pasando y ronda de preguntas p
 - [x] **0. Base**: `CLAUDE.md`, `challenge.md`, `PLAN.md`, `DECISIONS.md` (estructura vacía)
 - [x] **1. Análisis** (notas en `api-notes.md`): explorar los 4 endpoints reales (formas, casos borde, datos raros), checklist de requisitos, lista de ambigüedades, decidir qué consultar a Cocos
 - [x] **2. Diseño** (resumen en `CLAUDE.md`): estructura de carpetas, React Query vs Zustand (qué va dónde), navegación, estilos, formularios, cliente HTTP, manejo de errores, referencia visual, alcance de extras
-- [ ] **3. Setup**: repo git, Expo + TypeScript, lint/format, Jest, CI básico (GitHub Actions)
+- [x] **3. Setup**: repo git, Expo + TypeScript, lint/format, Jest, CI básico (GitHub Actions)
 - [ ] **4. Features** (una por una, con capa de datos y tests de lógica):
   - [ ] 4.1 Instrumentos (lista + retorno)
   - [ ] 4.2 Portfolio (valor de mercado, ganancia, rendimiento)

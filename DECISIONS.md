@@ -33,3 +33,12 @@ Para las peticiones HTTP y el manejo de errores voy a usar fetch con un wrapper 
 Voy a tratar a los endpoints como una API externa que puede limitar o fallar. Por eso busco hacer menos pedidos (debounce en la búsqueda, caché de React Query) y manejo el error 429 respetando el tiempo de espera que indique la API.
 
 En la UI me incliné por la de Robinhood, porque la siento más sencilla de cara al usuario. Descarté la de Coinbase (tarjetas) y la de Binance Lite (oscura y densa) porque quería que el foco estuviera en los números y que funcione bien tanto en modo claro como oscuro.
+
+
+## Etapa 3. Setup
+
+Preferí utilizar npm en vez de yarn o pnpm porque al tener que ejecutarse en un entorno local, no requiere de una instalación aparte. La plantilla de Expo la creé con lo mínimo necesario para no cargar el contenido de la aplicación ni de herramientas que hasta el momento no vamos a utilizar. Creé un test de precisión para el uso de la librería big.js porque es de las cosas más importantes que vamos a necesitar dentro de la app. El test muestra el caso concreto que me hizo elegirla: con floats, floor(0.58 / 0.01) da 57, y con big.js da 58.
+
+El CI corre los 4 checks básicos que necesitamos para no romper código compartido y seguir una misma línea de código: typecheck (errores de tipos), lint (errores comunes), formato (estilo consistente) y tests (que no se rompa la lógica).
+
+Al armar la plantilla de Expo saqué las dependencias web y el código de ejemplo que traía. También fijé react-dom a la misma versión que react, porque si no npm me tiraba un conflicto de dependencias con expo-router.
