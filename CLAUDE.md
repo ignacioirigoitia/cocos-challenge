@@ -28,7 +28,7 @@ Lo que evalúan es **cómo piensa Ignacio**: las decisiones que toma y el camino
 - **Dinero:** todo con `big.js`, nunca floats. Se convierte a `Big` apenas entra la respuesta. Lógica centralizada en `src/shared/money/` (funciones puras con tests).
 - **Validación:** Zod en las respuestas de la API (al entrar) y en el formulario (resolver de react-hook-form). `last_price` en 0 = "sin precio": se muestra "--" y se bloquea operar; el instrumento sigue en la lista.
 - **Navegación:** Expo Router. Tabs: Mercado (con búsqueda), Portfolio, Ajustes. La orden es un modal.
-- **Carpetas:** `app/` solo rutas finas; `src/features/{instruments,portfolio,search,orders}` y `src/shared/{api,money,store,ui}`.
+- **Carpetas:** `src/app/` solo rutas finas (Expo Router con carpeta `src`); `src/features/{instruments,portfolio,search,orders}` y `src/shared/{api,money,store,ui}`. Se crean con su primer archivo, sin carpetas vacías. Alias `@/` = `src/`.
 - **Estilos:** `StyleSheet` nativo con tokens propios y hook `useTheme`. Dirección visual: minimalista tipo Robinhood (fondo limpio, sin cajas, foco en números y verde/rojo).
 - **HTTP:** `fetch` con wrapper fino en `shared/api` (headers, timeout, Zod). Errores tipados: sin conexión, timeout, HTTP, datos inválidos, rate limit (429, respeta `Retry-After`).
 - **Reintentos:** lecturas 2 veces con espera creciente (solo red/5xx). **Nunca** reintentar automáticamente el POST de una orden. `REJECTED` es un resultado de negocio, no un error.
@@ -36,6 +36,13 @@ Lo que evalúan es **cómo piensa Ignacio**: las decisiones que toma y el camino
 - **Selector de modo de bugs:** en Ajustes, oculto en producción.
 - **Extras:** CI con GitHub Actions, historial de órdenes, tests del formulario (React Native Testing Library), accesibilidad básica. Descartados: biometría, EAS.
 - Notas de la API observada: `api-notes.md` (no es parte del enunciado).
+
+## Comandos (npm)
+- `npm start` levanta Expo (Expo Go). `npm run typecheck`, `npm run lint`, `npm run format` / `format:check`, `npm test`.
+- Dependencias de Expo/RN: `npx expo install <pkg>` (versiones compatibles con el SDK 58). El resto con `npm install`.
+- `react-dom` está fijado a la misma versión que `react` (peer de expo-router). No actualizar por separado.
+- CI (`.github/workflows/ci.yml`) corre typecheck, lint, format:check y test. Todo debe pasar antes de commitear.
+- Un commit por paso, mensajes claros en español (convención `tipo: descripción`).
 
 ## Cierre de cada etapa
 1. La app corre localmente.
