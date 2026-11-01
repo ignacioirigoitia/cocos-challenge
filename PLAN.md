@@ -11,7 +11,7 @@ Cada etapa se cierra con: app corriendo, chequeos pasando y ronda de preguntas p
   - [x] 4.2 Portfolio (valor de mercado, ganancia, rendimiento)
   - [x] 4.3 Búsqueda por ticker
   - [x] 4.4 Modal de órdenes (BUY/SELL, MARKET/LIMIT, cantidad o monto, estados)
-- [ ] **5. Producción**: errores, estados vacíos/carga, performance de listas, accesibilidad, extras
+- [x] **5. Producción**: errores, estados vacíos/carga, performance de listas, accesibilidad, extras
 - [ ] **6. Entrega**: README (instrucciones + decisiones técnicas), prueba desde cero, mail
 - [ ] **7. Llamada**: simulacro de preguntas del equipo sobre las decisiones
 
