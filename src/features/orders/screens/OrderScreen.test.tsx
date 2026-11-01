@@ -141,18 +141,21 @@ describe('OrderScreen: formulario', () => {
     expect(calls('GET', '/instruments')).toHaveLength(0);
   });
 
-  it('no deja comprar más de lo que alcanza el efectivo', async () => {
+  it('si al revisar tenés menos efectivo que al abrir, no deja comprar más de lo que alcanza', async () => {
     await renderScreen();
     await screen.findByText('Efectivo disponible');
-    await type('Cantidad de acciones', '100');
+    await type('Cantidad de acciones', '36'); // con $ 1.000 el campo permite hasta 36
+    // Entre abrir y revisar, tu efectivo bajó a $ 500.
+    fetchMock.mockImplementation(async (url: string) =>
+      fakeResponse(url.endsWith('/portfolio') ? { ...portfolio, cash: 500 } : instrument(27.12)),
+    );
 
     await press('Revisar orden');
 
     expect(
-      await screen.findByText(
-        'No tenés efectivo suficiente. Necesitás $ 2.712,00 y tenés $ 1.000,00.',
-      ),
+      await screen.findByText('No tenés efectivo suficiente. Necesitás $ 976,32 y tenés $ 500,00.'),
     ).toBeOnTheScreen();
+    expect(screen.queryByText('Revisá tu orden')).not.toBeOnTheScreen();
   });
 
   it('el precio límite aparece solo en las órdenes límite y es obligatorio', async () => {
@@ -539,14 +542,15 @@ describe('OrderScreen: máximo al vender', () => {
     expect(screen.getByText('Máximo: $ 135,60')).toBeOnTheScreen();
   });
 
-  it('al comprar no hay máximo por tenencia', async () => {
+  it('al comprar el máximo es por efectivo, no por las acciones que tenés', async () => {
     await renderScreen();
     await screen.findByText('Efectivo disponible');
 
     await type('Cantidad de acciones', '9');
 
-    expect(input('Cantidad de acciones')).toHaveDisplayValue('9');
-    expect(screen.queryByText(/Máximo/)).not.toBeOnTheScreen();
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('9'); // tenés 5, pero comprar no depende de eso
+    expect(screen.getByText('Máximo: 36 acciones')).toBeOnTheScreen();
+    expect(screen.queryByText('Máximo: 5 acciones')).not.toBeOnTheScreen();
   });
 });
 
@@ -576,5 +580,101 @@ describe('OrderScreen: el instrumento del link tiene que ser el real', () => {
 
     expect(await screen.findByText('Revisá tu orden')).toBeOnTheScreen();
     expect(screen.getByText('GARO')).toBeOnTheScreen(); // el ticker de la API, no el del link
+  });
+});
+
+describe('OrderScreen: máximo al comprar', () => {
+  // Efectivo $ 1.000 y precio de referencia $ 27,12: alcanzan 36 acciones (976,32).
+  const input = (label: string) => screen.getByLabelText(label);
+  const withPortfolio = (body: object) =>
+    fetchMock.mockImplementation(async (url: string) =>
+      fakeResponse(url.endsWith('/portfolio') ? body : instrument(27.12)),
+    );
+
+  async function openBuy() {
+    await renderScreen();
+    await screen.findByText('Efectivo disponible');
+  }
+
+  it('la cantidad no puede superar lo que alcanza con tu efectivo', async () => {
+    await openBuy();
+
+    await type('Cantidad de acciones', '99');
+
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('36');
+    expect(screen.getByText('Máximo: 36 acciones')).toBeOnTheScreen();
+  });
+
+  it('una cantidad que alcanza se respeta', async () => {
+    await openBuy();
+
+    await type('Cantidad de acciones', '20');
+
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('20');
+  });
+
+  it('por monto, no deja pasar de tu efectivo', async () => {
+    await openBuy();
+    await choose('Monto en $');
+
+    await type('Monto en pesos', '99999');
+
+    expect(input('Monto en pesos')).toHaveDisplayValue('1000,00');
+    expect(screen.getByText('Máximo: $ 1.000,00')).toBeOnTheScreen();
+  });
+
+  it('en una orden límite, mientras no haya precio no se limita nada', async () => {
+    await openBuy();
+    await choose('Límite');
+
+    await type('Cantidad de acciones', '99');
+
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('99');
+    expect(screen.queryByText(/Máximo/)).not.toBeOnTheScreen();
+  });
+
+  it('en una orden límite el máximo sale del precio límite', async () => {
+    await openBuy();
+    await choose('Límite');
+    await type('Cantidad de acciones', '15');
+
+    await type('Precio límite', '10'); // 1000 / 10 = 100
+    expect(screen.getByText('Máximo: 100 acciones')).toBeOnTheScreen();
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('15');
+
+    await type('Precio límite', '50'); // 1000 / 50 = 20: lo escrito se vuelve a recortar
+    expect(screen.getByText('Máximo: 20 acciones')).toBeOnTheScreen();
+    await type('Cantidad de acciones', '30');
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('20');
+  });
+
+  it('si cambiás el precio límite y lo ya escrito no entra, se recorta solo', async () => {
+    await openBuy();
+    await choose('Límite');
+    await type('Precio límite', '10');
+    await type('Cantidad de acciones', '80');
+
+    await type('Precio límite', '50'); // ahora el máximo es 20
+
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('20');
+  });
+
+  it('al pasar de comprar a vender, lo escrito se recorta a lo que tenés', async () => {
+    await openBuy();
+    await type('Cantidad de acciones', '30'); // alcanza para comprar 30
+
+    await choose('Vender'); // pero solo tenés 5
+
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('5');
+  });
+
+  it('si el efectivo no alcanza ni para una acción, el máximo es 0', async () => {
+    withPortfolio({ ...portfolio, cash: 10 });
+    await openBuy();
+
+    await type('Cantidad de acciones', '3');
+
+    expect(screen.getByText('Máximo: 0 acciones')).toBeOnTheScreen();
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('0');
   });
 });

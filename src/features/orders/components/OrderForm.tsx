@@ -1,4 +1,5 @@
-import type { Big } from 'big.js';
+import { Big } from 'big.js';
+import { useEffect } from 'react';
 import { Controller, type UseFormReturn, useWatch } from 'react-hook-form';
 import { Text, View } from 'react-native';
 
@@ -63,8 +64,36 @@ export function OrderForm({
   // que el usuario toque "Revisar orden" para avisarle.
   const canSell = held.gt(0);
   const isSell = values.side === 'SELL';
-  // Al vender no se puede superar lo que se tiene: ni en acciones ni en el valor de todas ellas.
-  const maxAmount = held.times(lastPrice).round(2, 0);
+
+  // Máximos que ya se conocen, para no dejar escribir algo imposible.
+  // - Acciones: al vender, las que se tienen; al comprar, las que alcanzan con el efectivo, al
+  //   precio con el que se paga (el de referencia en MARKET, el límite en LIMIT). Si todavía no
+  //   hay precio límite no se puede calcular y no se limita nada.
+  // - Pesos: al vender, el valor de todas las acciones; al comprar, el efectivo.
+  const limitPrice = values.type === 'LIMIT' ? parseUserNumber(values.priceText ?? '') : null;
+  const buyPrice = values.type === 'MARKET' ? lastPrice : limitPrice?.gt(0) ? limitPrice : null;
+  const maxQuantity: Big | null = isSell
+    ? held
+    : buyPrice
+      ? quantityFromAmount(cash, buyPrice)
+      : null;
+  const maxAmount = (isSell ? held.times(lastPrice) : cash).round(2, 0);
+
+  // Si cambia el máximo (otro tipo de orden, otro precio límite, de comprar a vender), lo que ya
+  // estaba escrito se vuelve a recortar.
+  const maxQuantityText = maxQuantity?.toString() ?? null;
+  const maxAmountText = maxAmount.toString();
+  useEffect(() => {
+    const quantityText = form.getValues('quantityText');
+    const amountText = form.getValues('amountText');
+    const quantity =
+      maxQuantityText === null
+        ? quantityText
+        : clampToMax(quantityText, new Big(maxQuantityText), 0);
+    const amount = clampToMax(amountText, new Big(maxAmountText), 2);
+    if (quantity !== quantityText) form.setValue('quantityText', quantity);
+    if (amount !== amountText) form.setValue('amountText', amount);
+  }, [form, maxQuantityText, maxAmountText]);
   const sides: SegmentOption<Side>[] = [
     { value: 'BUY', label: 'Comprar', activeColor: colors.positive },
     { value: 'SELL', label: 'Vender', activeColor: colors.negative, disabled: !canSell },
@@ -124,10 +153,12 @@ export function OrderForm({
             <TextField
               label="Cantidad de acciones"
               value={field.value}
-              onChangeText={(text) => field.onChange(isSell ? clampToMax(text, held, 0) : text)}
+              onChangeText={(text) =>
+                field.onChange(maxQuantity ? clampToMax(text, maxQuantity, 0) : text)
+              }
               keyboardType="number-pad"
               error={errors.quantityText?.message}
-              hint={isSell ? `Máximo: ${quantityLabel(held)}` : undefined}
+              hint={maxQuantity ? `Máximo: ${quantityLabel(maxQuantity)}` : undefined}
             />
           )}
         />
@@ -139,11 +170,9 @@ export function OrderForm({
             <TextField
               label="Monto en pesos"
               value={field.value}
-              onChangeText={(text) =>
-                field.onChange(isSell ? clampToMax(text, maxAmount, 2) : text)
-              }
+              onChangeText={(text) => field.onChange(clampToMax(text, maxAmount, 2))}
               error={errors.amountText?.message}
-              hint={isSell ? `Máximo: ${formatARS(maxAmount)}` : undefined}
+              hint={`Máximo: ${formatARS(maxAmount)}`}
             />
           )}
         />
