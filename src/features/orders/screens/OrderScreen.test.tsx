@@ -549,3 +549,32 @@ describe('OrderScreen: máximo al vender', () => {
     expect(screen.queryByText(/Máximo/)).not.toBeOnTheScreen();
   });
 });
+
+describe('OrderScreen: el instrumento del link tiene que ser el real', () => {
+  // La API dice que el id 16 es GARO.
+  async function reviewWith(p: OrderParams) {
+    await renderScreen(p);
+    await screen.findByText('Efectivo disponible');
+    await type('Cantidad de acciones', '10');
+    await press('Revisar orden');
+  }
+
+  it('si el ticker del link no corresponde al id, no avanza y lo explica', async () => {
+    await reviewWith({ ...params, ticker: 'MIRG' }); // id de GARO con ticker de otro
+
+    expect(
+      await screen.findByText(
+        'El instrumento no coincide con el que elegiste. Cerrá esta pantalla y volvé a abrirlo desde el listado.',
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText('Revisá tu orden')).not.toBeOnTheScreen();
+    expect(calls('POST', '/orders')).toHaveLength(0);
+  });
+
+  it('un ticker en minúsculas del mismo instrumento es válido y la revisión muestra el real', async () => {
+    await reviewWith({ ...params, ticker: 'garo' });
+
+    expect(await screen.findByText('Revisá tu orden')).toBeOnTheScreen();
+    expect(screen.getByText('GARO')).toBeOnTheScreen(); // el ticker de la API, no el del link
+  });
+});

@@ -22,7 +22,7 @@ import { useSubmitOrder } from '../useSubmitOrder';
 
 type Step =
   | { name: 'form' }
-  | { name: 'review'; result: OrderFormResult; currentPrice: Big }
+  | { name: 'review'; ticker: string; result: OrderFormResult; currentPrice: Big }
   | { name: 'result'; order: OrderResponse; request: OrderRequest; estimated: Big };
 
 interface Props {
@@ -84,6 +84,13 @@ export function OrderScreen({ params, onClose }: Props) {
       const fresh = await refreshOrderData(client, instrumentId);
       const currentPrice = fresh.instrument?.lastPrice;
       if (!fresh.instrument) return setCheckError('Este instrumento ya no está disponible.');
+      // Los parámetros de la ruta no son confiables: si el ticker no es el del instrumento real de
+      // ese id, la orden se enviaría sobre algo distinto de lo que muestra la pantalla.
+      if (fresh.instrument.ticker.trim().toUpperCase() !== params.ticker.trim().toUpperCase()) {
+        return setCheckError(
+          'El instrumento no coincide con el que elegiste. Cerrá esta pantalla y volvé a abrirlo desde el listado.',
+        );
+      }
       if (!currentPrice) return setCheckError('Este instrumento ya no tiene precio disponible.');
 
       const parsed = createOrderFormSchema({
@@ -101,7 +108,12 @@ export function OrderScreen({ params, onClose }: Props) {
         }
         return;
       }
-      setStep({ name: 'review', result: parsed.data, currentPrice });
+      setStep({
+        name: 'review',
+        ticker: fresh.instrument.ticker,
+        result: parsed.data,
+        currentPrice,
+      });
     } catch (e) {
       // Sin precio actualizado no se avanza: no se confirma con un dato viejo.
       setCheckError(`No pudimos actualizar el precio. ${errorMessage(e)}`);
@@ -155,7 +167,7 @@ export function OrderScreen({ params, onClose }: Props) {
   if (step.name === 'review') {
     return frame(
       <OrderReview
-        ticker={params.ticker}
+        ticker={step.ticker}
         result={step.result}
         referencePrice={lastPrice}
         currentPrice={step.currentPrice}
