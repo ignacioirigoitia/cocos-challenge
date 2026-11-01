@@ -4,7 +4,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 
 import { createQueryClient } from '@/shared/api/queryClient';
+import { AppErrorFallback } from '@/shared/ui/AppErrorFallback';
 import { useTheme } from '@/shared/ui/theme';
+
+// Límite global de errores: si algo inesperado rompe una pantalla, se muestra este aviso con
+// "Reintentar" en lugar de dejar la app en blanco.
+export { AppErrorFallback as ErrorBoundary };
 
 export default function RootLayout() {
   // useState garantiza un único QueryClient durante toda la vida de la app.
