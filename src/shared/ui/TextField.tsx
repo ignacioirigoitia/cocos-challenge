@@ -37,7 +37,7 @@ export function TextField({
           {
             color: colors.text,
             fontSize: fontSize.title,
-            borderBottomColor: error ? colors.negative : colors.border,
+            borderBottomColor: error ? colors.negative : colors.inputBorder,
           },
         ]}
       />

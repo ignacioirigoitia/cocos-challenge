@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { SegmentedControl } from './SegmentedControl';
 import { palettes } from './theme';
@@ -49,5 +50,15 @@ describe('SegmentedControl', () => {
     await fireEvent.press(screen.getByRole('radio', { name: 'Tres' }));
 
     expect(onChange).toHaveBeenCalledWith('c');
+  });
+
+  it('si una etiqueta no entra en una línea (letra grande), el texto partido queda centrado', async () => {
+    await render(
+      <SegmentedControl label="Prueba" options={options} value="a" onChange={jest.fn()} />,
+    );
+
+    const label = screen.getByText('Tres');
+
+    expect(StyleSheet.flatten(label.props.style).textAlign).toBe('center');
   });
 });

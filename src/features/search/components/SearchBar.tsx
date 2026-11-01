@@ -22,7 +22,10 @@ export function SearchBar({ value, onChangeText }: Props) {
         },
       ]}
     >
-      <Ionicons name="search" size={18} color={colors.textSecondary} />
+      {/* Decorativa: el campo ya tiene su etiqueta, el ícono no hay que leerlo. */}
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Ionicons name="search" size={18} color={colors.textSecondary} />
+      </View>
       <TextInput
         accessibilityLabel="Buscar por ticker"
         placeholder="Buscar por ticker"
@@ -54,7 +57,8 @@ export function SearchBar({ value, onChangeText }: Props) {
 
 const styles = StyleSheet.create({
   // Alto de 44 pt: tamaño táctil recomendado.
-  container: { flexDirection: 'row', alignItems: 'center', height: 44, borderRadius: 12 },
-  input: { flex: 1, height: '100%' },
+  // minHeight (no height): con letra grande el campo crece en vez de cortar el texto.
+  container: { flexDirection: 'row', alignItems: 'center', minHeight: 44, borderRadius: 12 },
+  input: { flex: 1, minHeight: 44 },
   clear: { minWidth: 32, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
 });

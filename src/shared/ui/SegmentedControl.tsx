@@ -47,6 +47,8 @@ export function SegmentedControl<T extends string>({ label, options, value, onCh
               style={{
                 fontSize: fontSize.md,
                 fontWeight: '600',
+                // Con letra grande una etiqueta puede partirse en dos líneas: que quede centrada.
+                textAlign: 'center',
                 color: selected ? colors.background : colors.textSecondary,
               }}
             >

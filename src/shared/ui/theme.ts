@@ -10,8 +10,12 @@ export const palettes = {
     background: '#FFFFFF',
     surface: '#F5F6F7',
     text: '#0B0B0C',
-    textSecondary: '#6B7280',
+    // Un poco más oscuro que #6B7280: sobre el gris del buscador no llegaba a AA (4,47 contra 4,5).
+    textSecondary: '#656C79',
     border: '#ECEEF0',
+    // Borde de los campos de texto: tiene que distinguirse del fondo (3 a 1), a diferencia de los
+    // separadores, que son decorativos.
+    inputBorder: '#868D98',
     positive: '#00875A',
     negative: '#D6333B',
   },
@@ -21,6 +25,7 @@ export const palettes = {
     text: '#F5F6F7',
     textSecondary: '#9CA3AF',
     border: '#23262B',
+    inputBorder: '#5B6370',
     positive: '#2DD48A',
     negative: '#FF6B6B',
   },
