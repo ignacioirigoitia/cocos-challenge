@@ -5,6 +5,7 @@ import {
   calcReturnPct,
   formatARS,
   formatPct,
+  formatQuantity,
   formatSignedARS,
   parseAmount,
   parsePrice,
@@ -127,6 +128,20 @@ describe('formatARS', () => {
 
   it('muestra "--" si no hay dato', () => {
     expect(formatARS(null)).toBe('--');
+  });
+});
+
+describe('formatQuantity', () => {
+  it.each([
+    ['0', '0 acciones'],
+    ['1', '1 acción'],
+    ['5', '5 acciones'],
+    ['999', '999 acciones'],
+    ['1000', '1.000 acciones'],
+    ['36852', '36.852 acciones'],
+    ['1234567', '1.234.567 acciones'],
+  ])('%p se muestra como %p', (quantity, expected) => {
+    expect(formatQuantity(new Big(quantity))).toBe(expected);
   });
 });
 

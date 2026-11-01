@@ -68,6 +68,15 @@ export function formatARS(value: Big | null): string {
   return `${rounded.lt(0) ? '-' : ''}$ ${withThousands},${dec}`;
 }
 
+/** "1 acción" / "36.852 acciones": cantidad entera con punto de miles. */
+export function formatQuantity(quantity: Big): string {
+  const int = quantity
+    .round(0, 0)
+    .toFixed(0)
+    .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${int} ${quantity.eq(1) ? 'acción' : 'acciones'}`;
+}
+
 /** Como formatARS pero con "+" en las ganancias: "+$ 21,20". "--" si no hay dato. */
 export function formatSignedARS(value: Big | null): string {
   if (!value) return NO_DATA;

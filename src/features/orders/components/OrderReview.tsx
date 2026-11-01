@@ -2,12 +2,12 @@ import type { Big } from 'big.js';
 import { Text, View } from 'react-native';
 
 import { errorMessage } from '@/shared/api/errorMessage';
-import { formatARS } from '@/shared/money/money';
+import { formatARS, formatQuantity } from '@/shared/money/money';
 import { Button } from '@/shared/ui/Button';
 import { useTheme } from '@/shared/ui/theme';
 
 import type { OrderFormResult } from '../formSchema';
-import { operationLabel, quantityLabel } from '../labels';
+import { operationLabel } from '../labels';
 import { isOutcomeUncertain } from '../submitError';
 import { SummaryRow } from './SummaryRow';
 
@@ -55,7 +55,7 @@ export function OrderReview({
 
       <SummaryRow label="Operación" value={operationLabel(request.side, request.type)} />
       <SummaryRow label="Instrumento" value={ticker} />
-      <SummaryRow label="Cantidad" value={quantityLabel(request.quantity)} />
+      <SummaryRow label="Cantidad" value={formatQuantity(request.quantity)} />
       {request.type === 'LIMIT' && request.price ? (
         <SummaryRow label="Precio límite" value={formatARS(request.price)} />
       ) : (

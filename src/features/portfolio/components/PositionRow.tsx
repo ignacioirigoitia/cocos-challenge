@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { formatARS, formatPct, formatSignedARS } from '@/shared/money/money';
+import { formatARS, formatPct, formatQuantity, formatSignedARS } from '@/shared/money/money';
 import { useTheme } from '@/shared/ui/theme';
 
 import type { Holding } from '../schema';
@@ -14,7 +14,7 @@ export function PositionRow({ holding, onPress }: Props) {
   const { colors, spacing, fontSize } = useTheme();
   const { ticker, quantity, marketValue, gain, returnPct } = holding;
 
-  const quantityText = `${quantity.toString()} ${quantity.eq(1) ? 'acción' : 'acciones'}`;
+  const quantityText = formatQuantity(quantity);
   const valueText = formatARS(marketValue);
   const resultText = gain ? `${formatSignedARS(gain)} · ${formatPct(returnPct)}` : '--';
   const resultColor = gain?.gt(0)

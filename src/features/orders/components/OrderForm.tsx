@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { Controller, type UseFormReturn, useWatch } from 'react-hook-form';
 import { Text, View } from 'react-native';
 
-import { formatARS, parseUserNumber } from '@/shared/money/money';
+import { formatARS, parseUserNumber, formatQuantity } from '@/shared/money/money';
 import { Button } from '@/shared/ui/Button';
 import { type SegmentOption, SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { TextField } from '@/shared/ui/TextField';
@@ -12,7 +12,6 @@ import { useTheme } from '@/shared/ui/theme';
 import type { OrderFormResult, OrderFormValues } from '../formSchema';
 import type { Side } from '../types';
 import { clampToMax } from '../inputLimits';
-import { quantityLabel } from '../labels';
 import { quantityFromAmount } from '../orderMath';
 import { SummaryRow } from './SummaryRow';
 
@@ -158,7 +157,7 @@ export function OrderForm({
               }
               keyboardType="number-pad"
               error={errors.quantityText?.message}
-              hint={maxQuantity ? `Máximo: ${quantityLabel(maxQuantity)}` : undefined}
+              hint={maxQuantity ? `Máximo: ${formatQuantity(maxQuantity)}` : undefined}
             />
           )}
         />
@@ -196,7 +195,7 @@ export function OrderForm({
       <View style={{ marginTop: spacing.lg }}>
         {estimatedQuantity?.gt(0) && (
           <Text style={{ color: colors.textSecondary, fontSize: fontSize.md }}>
-            {`Cantidad estimada: ${quantityLabel(estimatedQuantity)}`}
+            {`Cantidad estimada: ${formatQuantity(estimatedQuantity)}`}
           </Text>
         )}
         <SummaryRow

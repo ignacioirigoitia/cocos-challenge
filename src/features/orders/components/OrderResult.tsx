@@ -1,11 +1,11 @@
 import type { Big } from 'big.js';
 import { Text, View } from 'react-native';
 
-import { formatARS } from '@/shared/money/money';
+import { formatARS, formatQuantity } from '@/shared/money/money';
 import { Button } from '@/shared/ui/Button';
 import { useTheme } from '@/shared/ui/theme';
 
-import { operationLabel, quantityLabel } from '../labels';
+import { operationLabel } from '../labels';
 import { type OrderResponse } from '../order';
 import { orderStatusInfo } from '../status';
 import { estimatedCost } from '../orderMath';
@@ -52,7 +52,7 @@ export function OrderResult({ order, estimated, matchesRequest, onClose }: Props
       <View style={{ marginTop: spacing.md }}>
         <SummaryRow label="Orden" value={`#${order.id}`} />
         <SummaryRow label="Operación" value={operationLabel(order.side, order.type)} />
-        <SummaryRow label="Cantidad" value={quantityLabel(order.quantity)} />
+        <SummaryRow label="Cantidad" value={formatQuantity(order.quantity)} />
         {filled && <SummaryRow label="Precio de ejecución" value={formatARS(order.price)} />}
         {pending && <SummaryRow label="Precio límite" value={formatARS(order.price)} />}
         {filled && <SummaryRow label="Total" value={formatARS(total)} bold />}
