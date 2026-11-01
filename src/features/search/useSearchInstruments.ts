@@ -5,6 +5,9 @@ import { useSettings } from '@/shared/store/settings';
 
 import { InstrumentsResponseSchema } from '../instruments/schema';
 
+/** Espera tras la última tecla antes de consultar, para no llamar a la API en cada letra. */
+export const SEARCH_DEBOUNCE_MS = 300;
+
 /** Búsqueda por ticker en el servidor. Con el texto vacío no consulta. */
 export function useSearchInstruments(text: string) {
   const bugMode = useSettings((s) => s.bugMode);

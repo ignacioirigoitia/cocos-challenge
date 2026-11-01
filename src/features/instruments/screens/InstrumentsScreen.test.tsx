@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { createQueryClient } from '@/shared/api/queryClient';
 import { useSettings } from '@/shared/store/settings';
@@ -119,5 +119,108 @@ describe('InstrumentsScreen', () => {
 
     expect(await screen.findByText('DYCA')).toBeOnTheScreen();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('InstrumentsScreen: búsqueda', () => {
+  const capx = instruments[1];
+  const mirgEnSearch = { ...instruments[2], last_price: 40.88 }; // /search no tiene el defecto
+
+  // Responde la lista a /instruments y `searchBody` a /search.
+  function respondTo(searchBody: unknown, searchStatus = 200) {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.includes('/search') ? fakeResponse(searchBody, searchStatus) : fakeResponse(instruments),
+    );
+  }
+  const searchUrls = () =>
+    fetchMock.mock.calls.map((c) => c[0] as string).filter((u) => u.includes('/search'));
+  const type = (text: string) =>
+    fireEvent.changeText(screen.getByLabelText('Buscar por ticker'), text);
+
+  it('al escribir muestra los resultados que devuelve el servidor', async () => {
+    respondTo([capx]);
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await type('cap');
+
+    await waitFor(() => expect(screen.queryByText('DYCA')).not.toBeOnTheScreen());
+    expect(await screen.findByText('CAPX')).toBeOnTheScreen();
+    expect(searchUrls()).toEqual(['https://dummy-api-topaz.vercel.app/search?query=cap']);
+  });
+
+  it('no consulta en cada tecla: espera a que termine de escribir', async () => {
+    respondTo([capx]);
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await type('c');
+    await type('ca');
+    await type('cap');
+
+    await waitFor(() => expect(searchUrls()).toHaveLength(1));
+    expect(searchUrls()[0]).toContain('query=cap');
+    // Se espera a que el resultado se dibuje para no dejar actualizaciones fuera del test.
+    expect(await screen.findByText('CAPX')).toBeOnTheScreen();
+  });
+
+  it('con el campo vacío no consulta a /search', async () => {
+    respondTo([capx]);
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    expect(searchUrls()).toHaveLength(0);
+  });
+
+  it('si no hay resultados lo informa con el texto buscado', async () => {
+    respondTo([]);
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await type('zzz');
+
+    expect(await screen.findByText('No encontramos instrumentos con "zzz".')).toBeOnTheScreen();
+  });
+
+  it('el botón de borrar limpia el campo y vuelve a la lista completa', async () => {
+    respondTo([capx]);
+    await renderScreen();
+    await screen.findByText('DYCA');
+    await type('cap');
+    await waitFor(() => expect(screen.queryByText('DYCA')).not.toBeOnTheScreen());
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Borrar búsqueda' }));
+
+    expect(await screen.findByText('DYCA')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Buscar por ticker').props.value).toBe('');
+  });
+
+  it('ante un error de la búsqueda muestra el mensaje y permite reintentar', async () => {
+    // 400 y no 500: un 5xx se reintenta con espera creciente (ver retry.test.ts) y demoraría el test.
+    respondTo({ error: 'Búsqueda inválida' }, 400);
+    await renderScreen();
+    await screen.findByText('DYCA');
+    await type('cap');
+
+    expect(await screen.findByText('Búsqueda inválida')).toBeOnTheScreen();
+
+    respondTo([capx]);
+    await fireEvent.press(screen.getByRole('button', { name: 'Reintentar' }));
+
+    expect(await screen.findByText('CAPX')).toBeOnTheScreen();
+  });
+
+  // Defecto conocido de la API (ver api-notes.md): /instruments y /search no coinciden en los
+  // modos con bugs. Cada pantalla muestra lo que dice su endpoint, validado por separado.
+  it('muestra el precio que informa /search aunque /instruments tenga el instrumento roto', async () => {
+    respondTo([mirgEnSearch]);
+    await renderScreen();
+    await screen.findByText('MIRG');
+    expect(screen.getAllByText('--')).toHaveLength(2); // en la lista, MIRG no tiene precio
+
+    await type('mirg');
+
+    expect(await screen.findByText('$ 40,88')).toBeOnTheScreen();
+    expect(screen.queryByText('--')).not.toBeOnTheScreen();
   });
 });
