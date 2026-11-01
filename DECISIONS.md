@@ -80,6 +80,7 @@ Para no llamar a la API en cada letra, espero 300 ms después de la última tecl
 Probando los modos de X-Enable-Bugs vi que /search y /instruments se contradicen: en easy, medium y hard, /instruments devuelve MIRG con precio 0 pero /search lo devuelve con su precio normal (40,88), y buscar "ars" devuelve una lista vacía cuando en off sí lo encuentra. Decidí mostrar lo que dice cada endpoint, validado por separado, sin mezclar las dos fuentes. Descarté combinarlas para tomar el precio que parezca válido, porque eso es elegir cuál precio es el verdadero sin poder saberlo, y en una app financiera prefiero mostrar "--" antes que un precio que no sé si es correcto. Lo dejé cubierto con un test y documentado como un defecto conocido de la API, y lo voy a incluir en el README.
 
 Al agregar íconos a la búsqueda apareció un problema: @expo/vector-icons necesita expo-asset, que estaba instalado pero escondido dentro de la carpeta de expo, así que Jest no lo encontraba. Lo agregué como dependencia directa. Y en los tests reemplazo los íconos por un componente vacío, porque intentan cargar un archivo de fuente que Jest no tiene. Es solo decoración, no afecta la lógica que se prueba.
+
 ### Órdenes (diseño del flujo)
 
 Hice el flujo de la orden en tres pasos: formulario, revisión y resultado. Antes de enviar hay una pantalla de revisión con el resumen de lo que voy a mandar. En una app de inversión enviar una orden por error cuesta plata, y la revisión además es el lugar donde puedo avisar que el precio es estimado y mostrar si cambió. Descarté el envío directo con un solo botón, que es más rápido pero no tiene ninguna red de seguridad.
@@ -116,3 +117,25 @@ Una vez un portfolio de hard apareció con una acción de más, como si no conta
 Agregué un límite global de errores, que era parte de la política de errores que había definido en el diseño. Si algo inesperado rompe una pantalla, la app muestra "Algo salió mal" con un botón para reintentar, en vez de quedarse en blanco.
 
 El historial de órdenes lo hice como una cuarta pestaña, "Órdenes". Descarté ponerlo como una sección dentro de Portfolio, que mezclaba dos listas en una pantalla larga, y como una pantalla escondida detrás de un botón, que nadie iba a encontrar. Siempre ordeno las órdenes en la app, de la más nueva a la más vieja, porque comprobé que la API no garantiza el orden: en off vienen de la más vieja a la más nueva y en easy, medium y hard no están ordenadas por fecha. El ticker lo saco de la lista de instrumentos, que ya está guardada en React Query por la pantalla de Mercado, y como la orden solo trae el id del instrumento, necesito las dos listas. Si falla una de las dos, muestro un error con reintentar y no un historial a medias, y si un instrumento no está en la lista muestro un guion y no un nombre inventado. En el historial una orden límite ejecutada es válida, porque se resolvió con el tiempo, a diferencia de la respuesta de un envío, donde una límite no puede venir ejecutada. Se actualiza solo con el gesto de tirar hacia abajo y cuando envío una orden.
+
+## Etapa 6. Entrega
+
+### Una cuenta propia por cada instalación
+
+La API guarda el efectivo, las tenencias y las órdenes según el header X-Candidate-Id. Yo venía usando el mismo id durante todo el desarrollo, con lo cual mi cuenta quedó con unas 20 órdenes de prueba, tenencias y el efectivo cambiado. Si dejaba ese id fijo, quien clone el repo vería mi historial y mis pruebas en vez de una cuenta limpia, y además nuestras órdenes se mezclarían sobre la misma cuenta.
+
+Por eso cada instalación genera su propio id la primera vez que se abre la app ("candidate-" más 12 caracteres al azar) y lo guarda en el dispositivo. Se puede ver y copiar en Ajustes. Dejé la variable EXPO_PUBLIC_CANDIDATE_ID como forma de fijar un id a mano, por si hace falta depurar o evaluar con una cuenta conocida; un id que ya quedó guardado no lo pisa.
+
+### Orden de las listas
+
+La API no garantiza ningún orden en los listados, y ya había comprobado que en las órdenes cambia según el modo. Si dejaba el orden tal como viene, dos pantallas con los mismos datos podían mostrarse distinto de una recarga a otra. Por eso Mercado y Portfolio van siempre en orden alfabético por ticker, con una sola función compartida. Elegí alfabético porque es el orden más fácil de predecir para quien busca un instrumento.
+
+En Mercado agregué además un selector "Ordenar por": A–Z, mayores subas y mayores bajas. Lo que ordeno es la variación del día (último precio contra el cierre), que es el dato que ya calculaba. En subas solo entran los que subieron y en bajas solo los que bajaron. Los que no tienen precio (el "--") o no variaron quedan afuera en vez de mezclarse con un valor inventado.
+
+### Qué se entrega y cómo
+
+En el root dejé solo lo que alguien necesita ver primero: el README, DECISIONS.md y CLAUDE.md. El enunciado, las notas de la API y el plan de trabajo los moví a la carpeta docs, para que la raíz no parezca un cajón de papeles. El README tiene cómo correrla, los chequeos, un resumen de las decisiones y los defectos de la API que encontré con lo que hago con cada uno, que es lo que había ido anotando en las etapas anteriores para pasarlo ahí.
+
+Antes de cerrar probé el proyecto desde cero: cloné el repo en una carpeta vacía, instalé con npm ci, corrí los cuatro chequeos y generé el bundle de iOS. Todo pasó. Con eso me aseguro de que no dependo de nada que solo existe en mi máquina. Al instalar, npm avisa de vulnerabilidades en dependencias de Expo y React Native, y las dejé como están: no quiero forzar un npm audit fix que me rompa el SDK por algo que viene de dependencias que no controlo.
+
+Descarté la biometría y los builds con EAS porque el enunciado no los pide y no me aportaban a lo que se evalúa.
