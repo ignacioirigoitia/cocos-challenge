@@ -9,7 +9,7 @@ Cada etapa se cierra con: app corriendo, chequeos pasando y ronda de preguntas p
 - [ ] **4. Features** (una por una, con capa de datos y tests de lógica):
   - [x] 4.1 Instrumentos (lista + retorno)
   - [x] 4.2 Portfolio (valor de mercado, ganancia, rendimiento)
-  - [ ] 4.3 Búsqueda por ticker
+  - [x] 4.3 Búsqueda por ticker
   - [ ] 4.4 Modal de órdenes (BUY/SELL, MARKET/LIMIT, cantidad o monto, estados)
 - [ ] **5. Producción**: errores, estados vacíos/carga, performance de listas, accesibilidad, extras
 - [ ] **6. Entrega**: README (instrucciones + decisiones técnicas), prueba desde cero, mail

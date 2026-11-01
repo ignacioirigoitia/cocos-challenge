@@ -70,3 +70,13 @@ Para construir la pantalla necesitaba ver una respuesta real con una posición, 
 Cuando una posición no tiene precio, el total del portfolio muestra "--" en vez de sumar solo las que sí tienen. Descarté mostrar un total parcial porque es un número que se puede malinterpretar, y es coherente con la regla del "--" que ya tenía para los instrumentos. El efectivo se muestra siempre aparte, porque ese dato sí es confiable.
 
 El efectivo puede ser 0 de forma legítima, a diferencia de un precio, que si es 0 es un dato roto. Por eso separé el parseo de montos del de precios. Y la cantidad de una posición tiene que ser un entero positivo, si no rechazo la respuesta, mientras que un precio roto solo deja sin valor a esa posición.
+
+### Búsqueda
+
+Puse el buscador arriba de la lista de Mercado y no en una pantalla aparte. Con el campo vacío se ve la lista completa y cuando escribo se ve el resultado de /search, así no hace falta navegar a ningún lado. La búsqueda la hace el servidor, como ya había decidido, y reutilicé las mismas filas y el mismo esquema de validación que la lista.
+
+Para no llamar a la API en cada letra, espero 300 ms después de la última tecla (debounce), cancelo el pedido anterior si ya escribí otra letra, y con el campo vacío no consulto nada. Mientras llega el resultado nuevo se sigue mostrando el anterior, para que la pantalla no parpadee. Es parte de tratar a la API como externa, para hacer menos pedidos.
+
+Probando los modos de X-Enable-Bugs vi que /search y /instruments se contradicen: en easy, medium y hard, /instruments devuelve MIRG con precio 0 pero /search lo devuelve con su precio normal (40,88), y buscar "ars" devuelve una lista vacía cuando en off sí lo encuentra. Decidí mostrar lo que dice cada endpoint, validado por separado, sin mezclar las dos fuentes. Descarté combinarlas para tomar el precio que parezca válido, porque eso es elegir cuál precio es el verdadero sin poder saberlo, y en una app financiera prefiero mostrar "--" antes que un precio que no sé si es correcto. Lo dejé cubierto con un test y documentado como un defecto conocido de la API, y lo voy a incluir en el README.
+
+Al agregar íconos a la búsqueda apareció un problema: @expo/vector-icons necesita expo-asset, que estaba instalado pero escondido dentro de la carpeta de expo, así que Jest no lo encontraba. Lo agregué como dependencia directa. Y en los tests reemplazo los íconos por un componente vacío, porque intentan cargar un archivo de fuente que Jest no tiene. Es solo decoración, no afecta la lógica que se prueba.
