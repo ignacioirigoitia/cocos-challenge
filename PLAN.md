@@ -7,8 +7,8 @@ Cada etapa se cierra con: app corriendo, chequeos pasando y ronda de preguntas p
 - [x] **2. Diseño** (resumen en `CLAUDE.md`): estructura de carpetas, React Query vs Zustand (qué va dónde), navegación, estilos, formularios, cliente HTTP, manejo de errores, referencia visual, alcance de extras
 - [x] **3. Setup**: repo git, Expo + TypeScript, lint/format, Jest, CI básico (GitHub Actions)
 - [ ] **4. Features** (una por una, con capa de datos y tests de lógica):
-  - [ ] 4.1 Instrumentos (lista + retorno)
-  - [ ] 4.2 Portfolio (valor de mercado, ganancia, rendimiento)
+  - [x] 4.1 Instrumentos (lista + retorno)
+  - [x] 4.2 Portfolio (valor de mercado, ganancia, rendimiento)
   - [ ] 4.3 Búsqueda por ticker
   - [ ] 4.4 Modal de órdenes (BUY/SELL, MARKET/LIMIT, cantidad o monto, estados)
 - [ ] **5. Producción**: errores, estados vacíos/carga, performance de listas, accesibilidad, extras
