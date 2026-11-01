@@ -7,7 +7,7 @@ import { ErrorState } from '@/shared/ui/ErrorState';
 import { useTheme } from '@/shared/ui/theme';
 
 import { PositionRow } from '../components/PositionRow';
-import { type Portfolio } from '../schema';
+import type { Holding, Portfolio } from '../schema';
 import { calcTotals } from '../totals';
 import { usePortfolio } from '../usePortfolio';
 
@@ -40,7 +40,12 @@ function Summary({ portfolio }: { portfolio: Portfolio }) {
   );
 }
 
-export function PortfolioScreen() {
+interface Props {
+  /** Se llama al tocar una posición (para vender). */
+  onSelect: (holding: Holding) => void;
+}
+
+export function PortfolioScreen({ onSelect }: Props) {
   const { colors, spacing, fontSize } = useTheme();
   const { data, isPending, isError, error, refetch, isRefetching } = usePortfolio();
 
@@ -68,7 +73,7 @@ export function PortfolioScreen() {
         <FlatList
           data={data.holdings}
           keyExtractor={(item) => String(item.instrumentId)}
-          renderItem={({ item }) => <PositionRow holding={item} />}
+          renderItem={({ item }) => <PositionRow holding={item} onPress={onSelect} />}
           ListHeaderComponent={<Summary portfolio={data} />}
           ItemSeparatorComponent={() => (
             <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border }} />

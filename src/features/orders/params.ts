@@ -1,6 +1,9 @@
+import type { Big } from 'big.js';
 import { z } from 'zod';
 
 import { parsePrice } from '@/shared/money/money';
+
+import type { Side } from './types';
 
 /**
  * Parámetros con los que se abre el modal. Viajan por la ruta, que no es confiable (un deep link
@@ -24,3 +27,24 @@ export const OrderParamsSchema = z
   }));
 
 export type OrderParams = z.output<typeof OrderParamsSchema>;
+
+/** Ruta del modal para un instrumento. Los parámetros viajan como texto y se validan al abrir. */
+export function orderHref(input: {
+  instrumentId: number;
+  ticker: string;
+  name: string;
+  lastPrice: Big | null;
+  side?: Side;
+}) {
+  return {
+    pathname: '/order' as const,
+    params: {
+      instrumentId: String(input.instrumentId),
+      ticker: input.ticker,
+      name: input.name,
+      // toFixed evita la notación científica ("1e-7"), que el esquema no acepta.
+      ...(input.lastPrice && { lastPrice: input.lastPrice.toFixed() }),
+      side: input.side ?? 'BUY',
+    },
+  };
+}

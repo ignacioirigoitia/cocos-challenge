@@ -1,11 +1,16 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatARS, formatPct } from '@/shared/money/money';
 import { useTheme } from '@/shared/ui/theme';
 
 import type { Instrument } from '../schema';
 
-export function InstrumentRow({ instrument }: { instrument: Instrument }) {
+interface Props {
+  instrument: Instrument;
+  onPress: (instrument: Instrument) => void;
+}
+
+export function InstrumentRow({ instrument, onPress }: Props) {
   const { colors, spacing, fontSize } = useTheme();
   const { ticker, name, lastPrice, returnPct } = instrument;
 
@@ -21,9 +26,11 @@ export function InstrumentRow({ instrument }: { instrument: Instrument }) {
   const label = `${ticker}, ${name}, ${lastPrice ? price : 'sin precio'}, ${returnPct ? `retorno ${pct}` : 'sin retorno'}`;
 
   return (
-    <View
-      accessible
+    <Pressable
+      accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityHint="Abre el formulario de orden"
+      onPress={() => onPress(instrument)}
       style={[styles.row, { paddingVertical: spacing.md, paddingHorizontal: spacing.lg }]}
     >
       <View style={styles.left}>
@@ -43,7 +50,7 @@ export function InstrumentRow({ instrument }: { instrument: Instrument }) {
         </Text>
         <Text style={{ color: pctColor, fontSize: fontSize.md, marginTop: 2 }}>{pct}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

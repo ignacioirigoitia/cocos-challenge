@@ -31,17 +31,19 @@ const sinPrecio = {
 
 let client: ReturnType<typeof createQueryClient>;
 let fetchMock: jest.Mock;
+let onSelect: jest.Mock;
 
 async function renderScreen() {
   await render(
     <QueryClientProvider client={client}>
-      <PortfolioScreen />
+      <PortfolioScreen onSelect={onSelect} />
     </QueryClientProvider>,
   );
 }
 
 beforeEach(() => {
   client = createQueryClient();
+  onSelect = jest.fn();
   useSettings.setState(initialSettings, true);
   fetchMock = jest.fn(async () => fakeResponse(real));
   globalThis.fetch = fetchMock as unknown as typeof fetch;
@@ -106,5 +108,16 @@ describe('PortfolioScreen', () => {
 
     expect(await screen.findByText('GARO')).toBeOnTheScreen();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('PortfolioScreen: vender desde una posición', () => {
+  it('al tocar una posición avisa cuál se eligió', async () => {
+    await renderScreen();
+
+    await fireEvent.press(await screen.findByLabelText(/^GARO, 1 acción/));
+
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect.mock.calls[0][0]).toMatchObject({ instrumentId: 16, ticker: 'GARO' });
   });
 });

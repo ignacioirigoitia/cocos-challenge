@@ -40,17 +40,19 @@ const instruments = [
 
 let client: ReturnType<typeof createQueryClient>;
 let fetchMock: jest.Mock;
+let onSelect: jest.Mock;
 
 async function renderScreen() {
   await render(
     <QueryClientProvider client={client}>
-      <InstrumentsScreen />
+      <InstrumentsScreen onSelect={onSelect} />
     </QueryClientProvider>,
   );
 }
 
 beforeEach(() => {
   client = createQueryClient();
+  onSelect = jest.fn();
   useSettings.setState(initialSettings, true);
   fetchMock = jest.fn(async () => fakeResponse(instruments));
   globalThis.fetch = fetchMock as unknown as typeof fetch;
@@ -222,5 +224,38 @@ describe('InstrumentsScreen: búsqueda', () => {
 
     expect(await screen.findByText('$ 40,88')).toBeOnTheScreen();
     expect(screen.queryByText('--')).not.toBeOnTheScreen();
+  });
+});
+
+describe('InstrumentsScreen: abrir la orden', () => {
+  it('al tocar una fila avisa qué instrumento se eligió', async () => {
+    await renderScreen();
+
+    await fireEvent.press(await screen.findByLabelText(/^DYCA,/));
+
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect.mock.calls[0][0]).toMatchObject({ id: 1, ticker: 'DYCA' });
+  });
+
+  it('un instrumento sin precio también se puede tocar: el modal explica por qué no se opera', async () => {
+    await renderScreen();
+
+    await fireEvent.press(await screen.findByLabelText(/^MIRG,/));
+
+    expect(onSelect.mock.calls[0][0]).toMatchObject({ ticker: 'MIRG', lastPrice: null });
+  });
+
+  it('también se puede elegir un resultado de la búsqueda', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.includes('/search') ? fakeResponse([instruments[1]]) : fakeResponse(instruments),
+    );
+    await renderScreen();
+    await screen.findByText('DYCA');
+    await fireEvent.changeText(screen.getByLabelText('Buscar por ticker'), 'cap');
+    await waitFor(() => expect(screen.queryByText('DYCA')).not.toBeOnTheScreen());
+
+    await fireEvent.press(await screen.findByLabelText(/^CAPX,/));
+
+    expect(onSelect.mock.calls[0][0]).toMatchObject({ id: 2, ticker: 'CAPX' });
   });
 });

@@ -1,11 +1,16 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatARS, formatPct, formatSignedARS } from '@/shared/money/money';
 import { useTheme } from '@/shared/ui/theme';
 
 import type { Holding } from '../schema';
 
-export function PositionRow({ holding }: { holding: Holding }) {
+interface Props {
+  holding: Holding;
+  onPress: (holding: Holding) => void;
+}
+
+export function PositionRow({ holding, onPress }: Props) {
   const { colors, spacing, fontSize } = useTheme();
   const { ticker, quantity, marketValue, gain, returnPct } = holding;
 
@@ -22,9 +27,11 @@ export function PositionRow({ holding }: { holding: Holding }) {
   const label = `${ticker}, ${quantityText}, ${marketValue ? `valor ${valueText}` : 'sin valor'}, ${gain ? `resultado ${resultText}` : 'sin resultado'}`;
 
   return (
-    <View
-      accessible
+    <Pressable
+      accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityHint="Abre el formulario de orden"
+      onPress={() => onPress(holding)}
       style={[styles.row, { paddingVertical: spacing.md, paddingHorizontal: spacing.lg }]}
     >
       <View style={styles.left}>
@@ -43,7 +50,7 @@ export function PositionRow({ holding }: { holding: Holding }) {
           {resultText}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

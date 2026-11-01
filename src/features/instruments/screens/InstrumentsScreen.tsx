@@ -10,9 +10,15 @@ import { ErrorState } from '@/shared/ui/ErrorState';
 import { useTheme } from '@/shared/ui/theme';
 
 import { InstrumentRow } from '../components/InstrumentRow';
+import type { Instrument } from '../schema';
 import { useInstruments } from '../useInstruments';
 
-export function InstrumentsScreen() {
+interface Props {
+  /** Se llama al tocar un instrumento (de la lista o de la búsqueda). */
+  onSelect: (instrument: Instrument) => void;
+}
+
+export function InstrumentsScreen({ onSelect }: Props) {
   const { colors, spacing, fontSize } = useTheme();
 
   const [text, setText] = useState('');
@@ -54,7 +60,7 @@ export function InstrumentsScreen() {
         <FlatList
           data={data}
           keyExtractor={(item) => String(item.id)}
-          renderItem={({ item }) => <InstrumentRow instrument={item} />}
+          renderItem={({ item }) => <InstrumentRow instrument={item} onPress={onSelect} />}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           ItemSeparatorComponent={() => (
