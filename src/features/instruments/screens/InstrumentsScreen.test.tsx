@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 
 import { createQueryClient } from '@/shared/api/queryClient';
 import { useSettings } from '@/shared/store/settings';
+import { palettes } from '@/shared/ui/theme';
 
 import { InstrumentsScreen } from './InstrumentsScreen';
 
@@ -121,6 +122,132 @@ describe('InstrumentsScreen', () => {
 
     expect(await screen.findByText('DYCA')).toBeOnTheScreen();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('InstrumentsScreen: ordenar por variación del día', () => {
+  // La lista de prueba: DYCA baja (-8,69%), CAPX sube (+7,99%), MIRG no tiene precio y ARS no varió.
+  const tickersShown = () =>
+    screen.getByTestId('instruments-list').props.data.map((i: { ticker: string }) => i.ticker);
+  const choose = (name: string) => fireEvent.press(screen.getByRole('radio', { name }));
+
+  it('ofrece tres formas de ordenar y arranca en A–Z', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    // El grupo no es "accesible" a propósito (si lo fuera, el lector no leería cada opción).
+    expect(screen.getByLabelText('Ordenar por').props.accessibilityRole).toBe('radiogroup');
+    expect(screen.getByRole('radio', { name: 'A–Z' })).toBeSelected();
+    expect(screen.getByRole('radio', { name: 'Mayores subas' })).toBeOnTheScreen();
+    expect(screen.getByRole('radio', { name: 'Mayores bajas' })).toBeOnTheScreen();
+    expect(tickersShown()).toEqual(['ARS', 'CAPX', 'DYCA', 'MIRG']);
+  });
+
+  it('"Mayores subas" muestra solo los que subieron', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await choose('Mayores subas');
+
+    expect(tickersShown()).toEqual(['CAPX']); // no entran DYCA (bajó), ARS (0%) ni MIRG (sin precio)
+  });
+
+  it('"Mayores bajas" muestra solo los que bajaron', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await choose('Mayores bajas');
+
+    expect(tickersShown()).toEqual(['DYCA']);
+  });
+
+  it('volver a A–Z muestra todos de nuevo', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+    await choose('Mayores bajas');
+
+    await choose('A–Z');
+
+    expect(tickersShown()).toHaveLength(4);
+  });
+
+  it('si ninguno bajó, lo dice en vez de mostrar una lista vacía', async () => {
+    fetchMock.mockResolvedValue(fakeResponse([instruments[1]])); // solo CAPX, que subió
+    await renderScreen();
+    await screen.findByText('CAPX');
+
+    await choose('Mayores bajas');
+
+    expect(await screen.findByText('Ningún instrumento bajó hoy.')).toBeOnTheScreen();
+  });
+
+  it('si ninguno subió, lo dice', async () => {
+    fetchMock.mockResolvedValue(fakeResponse([instruments[0]])); // solo DYCA, que bajó
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await choose('Mayores subas');
+
+    expect(await screen.findByText('Ningún instrumento subió hoy.')).toBeOnTheScreen();
+  });
+
+  it('"Mayores subas" va en verde y "Mayores bajas" en rojo cuando están elegidas', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await choose('Mayores subas');
+    expect(screen.getByRole('radio', { name: 'Mayores subas' })).toHaveStyle({
+      backgroundColor: palettes.light.positive,
+    });
+
+    await choose('Mayores bajas');
+    expect(screen.getByRole('radio', { name: 'Mayores bajas' })).toHaveStyle({
+      backgroundColor: palettes.light.negative,
+    });
+  });
+
+  it('se combina con la búsqueda: ordena y filtra los resultados', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.includes('/search')
+        ? fakeResponse([instruments[0], instruments[1]]) // DYCA y CAPX
+        : fakeResponse(instruments),
+    );
+    await renderScreen();
+    await screen.findByText('DYCA');
+    await choose('Mayores subas');
+
+    await fireEvent.changeText(screen.getByLabelText('Buscar por ticker'), 'c');
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([u]) => String(u).includes('/search'))).toBe(true),
+    );
+    await waitFor(() => expect(tickersShown()).toEqual(['CAPX']));
+  });
+
+  it('si ningún resultado de la búsqueda cumple, lo aclara con la búsqueda', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.includes('/search') ? fakeResponse([instruments[0]]) : fakeResponse(instruments),
+    );
+    await renderScreen();
+    await screen.findByText('DYCA');
+    await choose('Mayores subas');
+
+    await fireEvent.changeText(screen.getByLabelText('Buscar por ticker'), 'dy');
+
+    expect(await screen.findByText('Ningún resultado de la búsqueda subió hoy.')).toBeOnTheScreen();
+  });
+
+  it('si la búsqueda no encuentra nada, sigue diciendo que no encontró (no confunde con el orden)', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.includes('/search') ? fakeResponse([]) : fakeResponse(instruments),
+    );
+    await renderScreen();
+    await screen.findByText('DYCA');
+    await choose('Mayores subas');
+
+    await fireEvent.changeText(screen.getByLabelText('Buscar por ticker'), 'zzz');
+
+    expect(await screen.findByText('No encontramos instrumentos con "zzz".')).toBeOnTheScreen();
   });
 });
 
