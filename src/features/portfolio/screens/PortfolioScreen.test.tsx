@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { createQueryClient } from '@/shared/api/queryClient';
 import { useSettings } from '@/shared/store/settings';
@@ -26,7 +26,7 @@ const conGanancia = {
 };
 const sinPrecio = {
   cash: 1000,
-  holdings: [{ ...garo, ticker: 'MIRG', last_price: 0 }, { ...garo }],
+  holdings: [{ ...garo, instrument_id: 5, ticker: 'MIRG', last_price: 0 }, { ...garo }],
 };
 
 let client: ReturnType<typeof createQueryClient>;
@@ -119,5 +119,59 @@ describe('PortfolioScreen: vender desde una posición', () => {
 
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect.mock.calls[0][0]).toMatchObject({ instrumentId: 16, ticker: 'GARO' });
+  });
+});
+
+describe('PortfolioScreen: indicador de actualización', () => {
+  it('un refresco en segundo plano NO muestra el spinner de tirar para actualizar', async () => {
+    await renderScreen();
+    await screen.findByText('GARO');
+    let release: () => void = () => undefined;
+    fetchMock.mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          release = () => resolve(fakeResponse(real));
+        }),
+    );
+
+    await act(async () => {
+      void client.refetchQueries({ queryKey: ['portfolio'] });
+    });
+    await waitFor(() => expect(client.isFetching()).toBe(1));
+    // React Query avisa a la pantalla en un paso asíncrono: se lo deja terminar antes de mirar.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    expect(screen.getByTestId('portfolio-list').props.refreshControl.props.refreshing).toBe(false);
+
+    release();
+    await waitFor(() => expect(client.isFetching()).toBe(0));
+  });
+
+  it('al tirar para actualizar sí lo muestra y lo oculta al terminar', async () => {
+    await renderScreen();
+    await screen.findByText('GARO');
+    let release: () => void = () => undefined;
+    fetchMock.mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          release = () => resolve(fakeResponse(real));
+        }),
+    );
+
+    await act(async () => {
+      screen.getByTestId('portfolio-list').props.refreshControl.props.onRefresh();
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('portfolio-list').props.refreshControl.props.refreshing).toBe(true),
+    );
+
+    release();
+    await waitFor(() =>
+      expect(screen.getByTestId('portfolio-list').props.refreshControl.props.refreshing).toBe(
+        false,
+      ),
+    );
   });
 });

@@ -28,7 +28,19 @@ export function InstrumentsScreen({ onSelect }: Props) {
   // Con el campo vacío se ve la lista completa; si no, el resultado de /search.
   const list = useInstruments();
   const search = useSearchInstruments(query);
-  const { data, isPending, isError, error, refetch, isRefetching } = isSearching ? search : list;
+  const { data, isPending, isError, error, refetch } = isSearching ? search : list;
+
+  // El spinner de "tirar para actualizar" es solo del gesto del usuario: si la lista se actualiza
+  // por detrás (ej. al revisar una orden) no debe aparecer.
+  const [pulling, setPulling] = useState(false);
+  const onPull = async () => {
+    setPulling(true);
+    try {
+      await refetch();
+    } finally {
+      setPulling(false);
+    }
+  };
 
   const emptyMessage = isSearching
     ? `No encontramos instrumentos con "${query}".`
@@ -58,6 +70,7 @@ export function InstrumentsScreen({ onSelect }: Props) {
         <ErrorState message={errorMessage(error)} onRetry={() => refetch()} />
       ) : (
         <FlatList
+          testID="instruments-list"
           data={data}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => <InstrumentRow instrument={item} onPress={onSelect} />}
@@ -72,7 +85,11 @@ export function InstrumentsScreen({ onSelect }: Props) {
             </Text>
           }
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />
+            <RefreshControl
+              testID="refresh-control"
+              refreshing={pulling}
+              onRefresh={() => void onPull()}
+            />
           }
         />
       )}

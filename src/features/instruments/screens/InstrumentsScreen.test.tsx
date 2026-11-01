@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { createQueryClient } from '@/shared/api/queryClient';
 import { useSettings } from '@/shared/store/settings';
@@ -257,5 +257,55 @@ describe('InstrumentsScreen: abrir la orden', () => {
     await fireEvent.press(await screen.findByLabelText(/^CAPX,/));
 
     expect(onSelect.mock.calls[0][0]).toMatchObject({ id: 2, ticker: 'CAPX' });
+  });
+});
+
+describe('InstrumentsScreen: indicador de actualización', () => {
+  // Deja el pedido de /instruments colgado hasta que el test lo libere.
+  function hangRequests() {
+    const state: { release: () => void } = { release: () => undefined };
+    fetchMock.mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          state.release = () => resolve(fakeResponse(instruments));
+        }),
+    );
+    return state;
+  }
+  const refreshing = () =>
+    screen.getByTestId('instruments-list').props.refreshControl.props.refreshing;
+
+  it('un refresco en segundo plano (ej. al revisar una orden) NO muestra el spinner de tirar para actualizar', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+    const pending = hangRequests();
+
+    await act(async () => {
+      void client.refetchQueries({ queryKey: ['instruments'] });
+    });
+    await waitFor(() => expect(client.isFetching()).toBe(1));
+    // React Query avisa a la pantalla en un paso asíncrono: se lo deja terminar antes de mirar.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    expect(refreshing()).toBe(false);
+
+    pending.release();
+    await waitFor(() => expect(client.isFetching()).toBe(0));
+  });
+
+  it('al tirar para actualizar sí lo muestra y lo oculta al terminar', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+    const pending = hangRequests();
+
+    await act(async () => {
+      screen.getByTestId('instruments-list').props.refreshControl.props.onRefresh();
+    });
+    await waitFor(() => expect(refreshing()).toBe(true));
+
+    pending.release();
+    await waitFor(() => expect(refreshing()).toBe(false));
   });
 });

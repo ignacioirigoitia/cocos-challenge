@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -47,7 +48,19 @@ interface Props {
 
 export function PortfolioScreen({ onSelect }: Props) {
   const { colors, spacing, fontSize } = useTheme();
-  const { data, isPending, isError, error, refetch, isRefetching } = usePortfolio();
+  const { data, isPending, isError, error, refetch } = usePortfolio();
+
+  // El spinner de "tirar para actualizar" es solo del gesto del usuario: si la lista se actualiza
+  // por detrás (ej. al revisar una orden) no debe aparecer.
+  const [pulling, setPulling] = useState(false);
+  const onPull = async () => {
+    setPulling(true);
+    try {
+      await refetch();
+    } finally {
+      setPulling(false);
+    }
+  };
 
   return (
     <SafeAreaView edges={['top']} style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -71,6 +84,7 @@ export function PortfolioScreen({ onSelect }: Props) {
         <ErrorState message={errorMessage(error)} onRetry={() => refetch()} />
       ) : (
         <FlatList
+          testID="portfolio-list"
           data={data.holdings}
           keyExtractor={(item) => String(item.instrumentId)}
           renderItem={({ item }) => <PositionRow holding={item} onPress={onSelect} />}
@@ -84,7 +98,11 @@ export function PortfolioScreen({ onSelect }: Props) {
             </Text>
           }
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />
+            <RefreshControl
+              testID="refresh-control"
+              refreshing={pulling}
+              onRefresh={() => void onPull()}
+            />
           }
         />
       )}

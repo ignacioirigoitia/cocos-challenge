@@ -8,7 +8,6 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { usePortfolio } from '@/features/portfolio/usePortfolio';
 import { errorMessage } from '@/shared/api/errorMessage';
 import { formatARS } from '@/shared/money/money';
-import { BottomSheet } from '@/shared/ui/BottomSheet';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { useTheme } from '@/shared/ui/theme';
 
@@ -117,9 +116,8 @@ export function OrderScreen({ params, onClose }: Props) {
     setStep({ name: 'form' });
   };
 
-  const frame = (children: React.ReactNode) => (
-    <BottomSheet onClose={onClose}>{children}</BottomSheet>
-  );
+  // La hoja (BottomSheet) la pone OrderModal: acá solo está el contenido.
+  const frame = (children: React.ReactNode) => <View>{children}</View>;
 
   if (!lastPrice) {
     return frame(

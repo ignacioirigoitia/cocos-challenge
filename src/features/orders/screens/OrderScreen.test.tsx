@@ -190,9 +190,7 @@ describe('OrderScreen: formulario', () => {
       await screen.findByText('Este instrumento no tiene precio disponible.'),
     ).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Revisar orden' })).not.toBeOnTheScreen();
-
-    await press('Cerrar');
-    expect(onClose).toHaveBeenCalled();
+    // Cerrar la hoja es responsabilidad de BottomSheet (ver BottomSheet.test y OrderModal.test).
   });
 
   it('si no se puede traer el portfolio, ofrece reintentar', async () => {

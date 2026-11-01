@@ -23,7 +23,8 @@ export default function RootLayout() {
             // Pantalla transparente: la hoja (BottomSheet) la dibuja la propia pantalla, con el
             // alto de su contenido y un fondo oscuro que cierra al tocarlo.
             presentation: 'transparentModal',
-            animation: 'slide_from_bottom',
+            // Sin animación de ruta: la hoja anima su propia entrada y el fondo hace un fundido.
+            animation: 'none',
             headerShown: false,
             contentStyle: { backgroundColor: 'transparent' },
           }}

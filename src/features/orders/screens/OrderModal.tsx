@@ -33,5 +33,10 @@ export function OrderModal({ rawParams, onClose }: Props) {
     );
   }
 
-  return <OrderScreen params={parsed.data} onClose={onClose} />;
+  // `close` anima la salida de la hoja y recién después navega hacia atrás.
+  return (
+    <BottomSheet onClose={onClose}>
+      {(close) => <OrderScreen params={parsed.data} onClose={close} />}
+    </BottomSheet>
+  );
 }

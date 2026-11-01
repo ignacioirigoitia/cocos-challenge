@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { createQueryClient } from '@/shared/api/queryClient';
 
@@ -48,6 +48,18 @@ describe('OrderModal', () => {
     await screen.findByText('Efectivo disponible'); // espera a que termine de cargar
   });
 
+  it('el formulario vive dentro de la hoja: tiene su botón "Cerrar"', async () => {
+    await renderModal({
+      instrumentId: '16',
+      ticker: 'GARO',
+      name: 'Garovaglio',
+      lastPrice: '27.12',
+    });
+    await screen.findByText('Efectivo disponible');
+
+    expect(screen.getByRole('button', { name: 'Cerrar' })).toBeOnTheScreen();
+  });
+
   it('con parámetros inválidos (ej. un link roto) no abre nada a medias y permite cerrar', async () => {
     await renderModal({ instrumentId: 'abc', ticker: 'GARO' });
 
@@ -57,6 +69,6 @@ describe('OrderModal', () => {
     expect(screen.queryByText('Revisar orden')).not.toBeOnTheScreen();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Cerrar' }));
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1)); // después de la animación de salida
   });
 });
