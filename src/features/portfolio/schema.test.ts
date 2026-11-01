@@ -1,3 +1,4 @@
+import hardSinTicker from './__fixtures__/portfolio.hard-sin-ticker.json';
 import real from './__fixtures__/portfolio.real.json';
 import { PortfolioResponseSchema } from './schema';
 
@@ -70,5 +71,14 @@ describe('PortfolioResponseSchema', () => {
   it('rechaza una respuesta que no tiene la forma esperada', () => {
     expect(PortfolioResponseSchema.safeParse([]).success).toBe(false);
     expect(PortfolioResponseSchema.safeParse({ cash: 1 }).success).toBe(false);
+  });
+});
+
+describe('PortfolioResponseSchema con la respuesta real de X-Enable-Bugs: hard', () => {
+  it('una posición que llega sin ticker rechaza toda la respuesta: no se muestran datos a medias ni se inventa un nombre', () => {
+    // En hard, a veces una posición llega sin `ticker`. Se decidió no mostrarla con un nombre
+    // inventado: la pantalla avisa del error y permite reintentar.
+    expect(hardSinTicker.holdings.some((h) => !('ticker' in h))).toBe(true);
+    expect(PortfolioResponseSchema.safeParse(hardSinTicker).success).toBe(false);
   });
 });

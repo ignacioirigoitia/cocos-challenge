@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { createQueryClient } from '@/shared/api/queryClient';
 import { useSettings } from '@/shared/store/settings';
 
+import hardSinTicker from '../__fixtures__/portfolio.hard-sin-ticker.json';
 import real from '../__fixtures__/portfolio.real.json';
 import { PortfolioScreen } from './PortfolioScreen';
 
@@ -173,5 +174,23 @@ describe('PortfolioScreen: indicador de actualización', () => {
         false,
       ),
     );
+  });
+});
+
+describe('PortfolioScreen: respuesta real de X-Enable-Bugs: hard', () => {
+  it('si una posición llega sin ticker, avisa que hubo un error y permite volver a intentar', async () => {
+    // El defecto de hard es intermitente: el primer pedido viene roto, el siguiente bien.
+    fetchMock
+      .mockResolvedValueOnce(fakeResponse(hardSinTicker))
+      .mockResolvedValue(fakeResponse(real));
+    await renderScreen();
+
+    expect(await screen.findByText('Recibimos datos con un formato inesperado.')).toBeOnTheScreen();
+    expect(screen.queryByText(/Instrumento #/)).not.toBeOnTheScreen(); // no se inventa un nombre
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Reintentar' }));
+
+    expect(await screen.findByText('GARO')).toBeOnTheScreen();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
