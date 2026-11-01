@@ -10,6 +10,7 @@ import { useTheme } from '@/shared/ui/theme';
 
 import type { OrderFormResult, OrderFormValues } from '../formSchema';
 import type { Side } from '../types';
+import { clampToMax } from '../inputLimits';
 import { quantityLabel } from '../labels';
 import { quantityFromAmount } from '../orderMath';
 import { SummaryRow } from './SummaryRow';
@@ -61,6 +62,9 @@ export function OrderForm({
   // Vender solo tiene sentido si se tiene el activo: se sabe de antemano, no hace falta esperar a
   // que el usuario toque "Revisar orden" para avisarle.
   const canSell = held.gt(0);
+  const isSell = values.side === 'SELL';
+  // Al vender no se puede superar lo que se tiene: ni en acciones ni en el valor de todas ellas.
+  const maxAmount = held.times(lastPrice).round(2, 0);
   const sides: SegmentOption<Side>[] = [
     { value: 'BUY', label: 'Comprar', activeColor: colors.positive },
     { value: 'SELL', label: 'Vender', activeColor: colors.negative, disabled: !canSell },
@@ -120,9 +124,10 @@ export function OrderForm({
             <TextField
               label="Cantidad de acciones"
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={(text) => field.onChange(isSell ? clampToMax(text, held, 0) : text)}
               keyboardType="number-pad"
               error={errors.quantityText?.message}
+              hint={isSell ? `Máximo: ${quantityLabel(held)}` : undefined}
             />
           )}
         />
@@ -134,8 +139,11 @@ export function OrderForm({
             <TextField
               label="Monto en pesos"
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={(text) =>
+                field.onChange(isSell ? clampToMax(text, maxAmount, 2) : text)
+              }
               error={errors.amountText?.message}
+              hint={isSell ? `Máximo: ${formatARS(maxAmount)}` : undefined}
             />
           )}
         />

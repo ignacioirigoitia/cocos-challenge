@@ -7,6 +7,8 @@ interface Props {
   value: string;
   onChangeText: (text: string) => void;
   error?: string;
+  /** Texto de ayuda debajo del campo (ej. el máximo permitido). No se muestra si hay un error. */
+  hint?: string;
   keyboardType?: 'decimal-pad' | 'number-pad';
 }
 
@@ -15,6 +17,7 @@ export function TextField({
   value,
   onChangeText,
   error,
+  hint,
   keyboardType = 'decimal-pad',
 }: Props) {
   const { colors, spacing, fontSize } = useTheme();
@@ -44,6 +47,10 @@ export function TextField({
           style={{ color: colors.negative, fontSize: fontSize.sm, marginTop: spacing.xs }}
         >
           {error}
+        </Text>
+      ) : hint ? (
+        <Text style={{ color: colors.textSecondary, fontSize: fontSize.sm, marginTop: spacing.xs }}>
+          {hint}
         </Text>
       ) : null}
     </View>

@@ -89,7 +89,12 @@ beforeEach(() => {
   globalThis.fetch = fetchMock as unknown as typeof fetch;
 });
 
-afterEach(() => client.clear());
+afterEach(async () => {
+  // Tras enviar una orden la app refresca el portfolio por detrás: se espera a que termine para
+  // que esa actualización no caiga en el test siguiente.
+  await waitFor(() => expect(client.isFetching()).toBe(0));
+  client.clear();
+});
 
 const type = (label: string, text: string) =>
   fireEvent.changeText(screen.getByLabelText(label), text);
@@ -174,14 +179,23 @@ describe('OrderScreen: formulario', () => {
     expect(await screen.findByText('Cantidad estimada: 29 acciones')).toBeOnTheScreen();
   });
 
-  it('no deja vender más acciones de las que tenés', async () => {
+  it('si al revisar tenés menos acciones que al abrir, no deja vender más de las que quedan', async () => {
     await renderScreen({ ...params, side: 'SELL' });
     await screen.findByText('Efectivo disponible');
-    await type('Cantidad de acciones', '6');
+    await type('Cantidad de acciones', '5'); // el campo permite hasta 5: es lo que tenías
+    // Entre abrir y revisar, tu cartera cambió: ahora quedan 3.
+    fetchMock.mockImplementation(async (url: string) =>
+      fakeResponse(
+        url.endsWith('/portfolio')
+          ? { ...portfolio, holdings: [{ ...portfolio.holdings[0], quantity: 3 }] }
+          : instrument(27.12),
+      ),
+    );
 
     await press('Revisar orden');
 
-    expect(await screen.findByText('No tenés suficientes acciones. Tenés 5.')).toBeOnTheScreen();
+    expect(await screen.findByText('No tenés suficientes acciones. Tenés 3.')).toBeOnTheScreen();
+    expect(screen.queryByText('Revisá tu orden')).not.toBeOnTheScreen();
   });
 
   it('sin precio no se puede operar', async () => {
@@ -481,5 +495,57 @@ describe('OrderScreen: comprar y vender', () => {
 
     expect(await screen.findByText('Comprar GARO')).toBeOnTheScreen();
     expect(screen.getByRole('radio', { name: 'Comprar' })).toBeSelected();
+  });
+});
+
+describe('OrderScreen: máximo al vender', () => {
+  // La cartera de los tests tiene 5 acciones de GARO y el precio de referencia es $ 27,12.
+  const input = (label: string) => screen.getByLabelText(label);
+
+  async function openSell() {
+    await renderScreen({ ...params, side: 'SELL' });
+    await screen.findByText('Efectivo disponible');
+  }
+
+  it('al vender, la cantidad no puede superar las acciones que tenés', async () => {
+    await openSell();
+
+    await type('Cantidad de acciones', '9');
+
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('5');
+  });
+
+  it('una cantidad dentro de lo que tenés se respeta', async () => {
+    await openSell();
+
+    await type('Cantidad de acciones', '3');
+
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('3');
+  });
+
+  it('muestra el máximo permitido', async () => {
+    await openSell();
+
+    expect(screen.getByText('Máximo: 5 acciones')).toBeOnTheScreen();
+  });
+
+  it('por monto, no deja pasar del valor de todas tus acciones', async () => {
+    await openSell();
+    await choose('Monto en $');
+
+    await type('Monto en pesos', '99999');
+
+    expect(input('Monto en pesos')).toHaveDisplayValue('135,60'); // 5 x 27,12
+    expect(screen.getByText('Máximo: $ 135,60')).toBeOnTheScreen();
+  });
+
+  it('al comprar no hay máximo por tenencia', async () => {
+    await renderScreen();
+    await screen.findByText('Efectivo disponible');
+
+    await type('Cantidad de acciones', '9');
+
+    expect(input('Cantidad de acciones')).toHaveDisplayValue('9');
+    expect(screen.queryByText(/Máximo/)).not.toBeOnTheScreen();
   });
 });
