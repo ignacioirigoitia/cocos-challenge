@@ -151,6 +151,29 @@ describe('InstrumentsScreen: búsqueda', () => {
     expect(searchUrls()).toEqual(['https://dummy-api-topaz.vercel.app/search?query=cap']);
   });
 
+  it('mientras llega la primera búsqueda se sigue viendo la lista completa, sin spinner', async () => {
+    let release: () => void = () => undefined;
+    fetchMock.mockImplementation((url: string) =>
+      url.includes('/search')
+        ? new Promise<Response>((resolve) => {
+            release = () => resolve(fakeResponse([capx]));
+          })
+        : Promise.resolve(fakeResponse(instruments)),
+    );
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await type('cap');
+    await waitFor(() => expect(searchUrls()).toHaveLength(1)); // la búsqueda ya salió y no volvió
+
+    expect(screen.getByText('DYCA')).toBeOnTheScreen();
+    expect(screen.queryByLabelText('Cargando instrumentos')).not.toBeOnTheScreen();
+
+    release();
+    await waitFor(() => expect(screen.queryByText('DYCA')).not.toBeOnTheScreen());
+    expect(await screen.findByText('CAPX')).toBeOnTheScreen();
+  });
+
   it('no consulta en cada tecla: espera a que termine de escribir', async () => {
     respondTo([capx]);
     await renderScreen();

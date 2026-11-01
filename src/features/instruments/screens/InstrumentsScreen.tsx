@@ -25,10 +25,13 @@ export function InstrumentsScreen({ onSelect }: Props) {
   const query = useDebouncedValue(text, SEARCH_DEBOUNCE_MS).trim();
   const isSearching = text.trim().length > 0;
 
-  // Con el campo vacío se ve la lista completa; si no, el resultado de /search.
+  // Con el campo vacío se ve la lista completa; si no, el resultado de /search. Mientras llega la
+  // primera búsqueda se sigue mostrando la lista completa en vez de un spinner: la lista no
+  // desaparece al escribir la primera letra.
   const list = useInstruments();
   const search = useSearchInstruments(query);
-  const { data, isPending, isError, error, refetch } = isSearching ? search : list;
+  const showingSearch = isSearching && !search.isPending;
+  const { data, isPending, isError, error, refetch } = showingSearch ? search : list;
 
   // El spinner de "tirar para actualizar" es solo del gesto del usuario: si la lista se actualiza
   // por detrás (ej. al revisar una orden) no debe aparecer.
@@ -42,7 +45,7 @@ export function InstrumentsScreen({ onSelect }: Props) {
     }
   };
 
-  const emptyMessage = isSearching
+  const emptyMessage = showingSearch
     ? `No encontramos instrumentos con "${query}".`
     : 'No hay instrumentos para mostrar.';
 
