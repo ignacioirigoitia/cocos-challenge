@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text } from 'react-native';
 
-import { Button } from '@/shared/ui/Button';
+import { BottomSheet } from '@/shared/ui/BottomSheet';
 import { useTheme } from '@/shared/ui/theme';
 
 import { OrderParamsSchema } from '../params';
@@ -18,20 +18,20 @@ export function OrderModal({ rawParams, onClose }: Props) {
 
   if (!parsed.success) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background, padding: spacing.xl }]}>
-        <Text style={{ color: colors.text, fontSize: fontSize.lg, textAlign: 'center' }}>
+      <BottomSheet onClose={onClose}>
+        <Text
+          style={{
+            color: colors.text,
+            fontSize: fontSize.lg,
+            textAlign: 'center',
+            paddingVertical: spacing.xl,
+          }}
+        >
           No pudimos abrir la orden. Los datos del instrumento no son válidos.
         </Text>
-        <View style={{ marginTop: spacing.xl, alignSelf: 'stretch' }}>
-          <Button label="Cerrar" onPress={onClose} />
-        </View>
-      </View>
+      </BottomSheet>
     );
   }
 
   return <OrderScreen params={parsed.data} onClose={onClose} />;
 }
-
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-});

@@ -3,12 +3,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Big } from 'big.js';
 import { useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { usePortfolio } from '@/features/portfolio/usePortfolio';
 import { errorMessage } from '@/shared/api/errorMessage';
 import { formatARS } from '@/shared/money/money';
-import { Button } from '@/shared/ui/Button';
+import { BottomSheet } from '@/shared/ui/BottomSheet';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { useTheme } from '@/shared/ui/theme';
 
@@ -118,13 +118,7 @@ export function OrderScreen({ params, onClose }: Props) {
   };
 
   const frame = (children: React.ReactNode) => (
-    <ScrollView
-      keyboardShouldPersistTaps="handled"
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: spacing.lg, flexGrow: 1 }}
-    >
-      {children}
-    </ScrollView>
+    <BottomSheet onClose={onClose}>{children}</BottomSheet>
   );
 
   if (!lastPrice) {
@@ -133,9 +127,6 @@ export function OrderScreen({ params, onClose }: Props) {
         <Text style={{ color: colors.text, fontSize: fontSize.lg, textAlign: 'center' }}>
           Este instrumento no tiene precio disponible.
         </Text>
-        <View style={{ marginTop: spacing.xl, alignSelf: 'stretch' }}>
-          <Button label="Cerrar" onPress={onClose} />
-        </View>
       </View>,
     );
   }
@@ -148,7 +139,11 @@ export function OrderScreen({ params, onClose }: Props) {
   }
   if (portfolio.isError) {
     return frame(
-      <ErrorState message={errorMessage(portfolio.error)} onRetry={() => portfolio.refetch()} />,
+      <ErrorState
+        compact
+        message={errorMessage(portfolio.error)}
+        onRetry={() => portfolio.refetch()}
+      />,
     );
   }
 
@@ -206,5 +201,6 @@ export function OrderScreen({ params, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // Sin flex: 1. La hoja se ajusta al alto del contenido, así que necesita un alto propio.
+  center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48 },
 });

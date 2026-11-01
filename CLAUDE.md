@@ -27,7 +27,7 @@ Lo que evalúan es **cómo piensa Ignacio**: las decisiones que toma y el camino
 - **Estado:** React Query (datos del servidor), react-hook-form (formulario de orden, valores como string), Zustand (global: tema claro/oscuro, configuración de API: `X-Candidate-Id` y modo `X-Enable-Bugs`, persistidos).
 - **Dinero:** todo con `big.js`, nunca floats. Se convierte a `Big` apenas entra la respuesta. Lógica centralizada en `src/shared/money/` (funciones puras con tests).
 - **Validación:** Zod en las respuestas de la API (al entrar) y en el formulario (resolver de react-hook-form). `last_price` en 0 = "sin precio": se muestra "--" y se bloquea operar; el instrumento sigue en la lista.
-- **Navegación:** Expo Router. Tabs: Mercado (con búsqueda), Portfolio, Ajustes. La orden es un modal.
+- **Navegación:** Expo Router. Tabs: Mercado (con búsqueda), Portfolio, Ajustes. La orden es una ruta `transparentModal` con una hoja propia (`BottomSheet`) pegada abajo y con el alto de su contenido. Se probó la hoja nativa (`formSheet` + `fitToContents`) y no se ajustaba al contenido, por eso se hizo propia.
 - **Carpetas:** `src/app/` solo rutas finas (Expo Router con carpeta `src`); `src/features/{instruments,portfolio,search,orders}` y `src/shared/{api,money,store,ui}`. Se crean con su primer archivo, sin carpetas vacías. Alias `@/` = `src/`.
 - **Estilos:** `StyleSheet` nativo con tokens propios y hook `useTheme`. Dirección visual: minimalista tipo Robinhood (fondo limpio, sin cajas, foco en números y verde/rojo).
 - **HTTP:** `fetch` con wrapper fino en `shared/api` (headers, timeout, Zod). Errores tipados: sin conexión, timeout, HTTP, datos inválidos, rate limit (429, respeta `Retry-After`).
