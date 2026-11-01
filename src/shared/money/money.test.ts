@@ -8,7 +8,28 @@ import {
   formatSignedARS,
   parseAmount,
   parsePrice,
+  parseUserNumber,
 } from './money';
+
+describe('parseUserNumber', () => {
+  it.each([
+    ['10', '10'],
+    ['10.5', '10.5'],
+    ['10,5', '10.5'], // coma decimal, como se escribe en Argentina
+    ['  7 ', '7'],
+    ['0', '0'],
+    ['0,05', '0.05'],
+  ])('convierte %p a %p', (text, expected) => {
+    expect(parseUserNumber(text)?.toString()).toBe(expected);
+  });
+
+  it.each(['', '  ', ',', '.5', '5.', '-5', 'abc', '1e5', '1,2,3', '1.000,5', '10 000', '٣'])(
+    'devuelve null para un texto inválido: %p',
+    (text) => {
+      expect(parseUserNumber(text)).toBeNull();
+    },
+  );
+});
 
 describe('parseAmount', () => {
   it('acepta un monto con decimales', () => {

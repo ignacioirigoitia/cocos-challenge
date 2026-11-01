@@ -82,3 +82,14 @@ export function formatPct(value: Big | null): string {
   const sign = rounded.gt(0) ? '+' : rounded.lt(0) ? '-' : '';
   return `${sign}${rounded.abs().toFixed(2).replace('.', ',')}%`;
 }
+
+const USER_NUMBER = /^\d+([.,]\d+)?$/;
+
+/**
+ * Convierte lo que escribe el usuario a Big. Acepta coma o punto decimal.
+ * null si no es un número simple (sin signo, miles ni notación científica).
+ */
+export function parseUserNumber(text: string): Big | null {
+  const trimmed = text.trim();
+  return USER_NUMBER.test(trimmed) ? new Big(trimmed.replace(',', '.')) : null;
+}
