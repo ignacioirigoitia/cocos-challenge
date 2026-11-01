@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { Big } from 'big.js';
 
 import { createQueryClient } from '@/shared/api/queryClient';
+import { palettes } from '@/shared/ui/theme';
 import { useSettings } from '@/shared/store/settings';
 
 import real from '../__fixtures__/order.real.json';
@@ -420,5 +421,65 @@ describe('OrderScreen: errores al enviar', () => {
     expect(calls('POST', '/orders')).toHaveLength(1);
     release(fakeResponse(order()));
     expect(await screen.findByText('Orden ejecutada')).toBeOnTheScreen();
+  });
+});
+
+describe('OrderScreen: comprar y vender', () => {
+  const sinTenencias = { cash: 1000, holdings: [] };
+  // Responde el portfolio indicado (por defecto el de los tests: 5 acciones de GARO).
+  const withPortfolio = (body: object) =>
+    fetchMock.mockImplementation(async (url: string) =>
+      fakeResponse(url.endsWith('/portfolio') ? body : instrument(27.12)),
+    );
+
+  it('Comprar va en verde y Vender en rojo cuando están elegidos', async () => {
+    await renderScreen();
+    await screen.findByText('Efectivo disponible');
+    expect(screen.getByRole('radio', { name: 'Comprar' })).toHaveStyle({
+      backgroundColor: palettes.light.positive,
+    });
+
+    await choose('Vender');
+
+    expect(screen.getByRole('radio', { name: 'Vender' })).toHaveStyle({
+      backgroundColor: palettes.light.negative,
+    });
+  });
+
+  it('si tenés acciones del activo, Vender está habilitado', async () => {
+    await renderScreen();
+    await screen.findByText('Efectivo disponible');
+
+    expect(screen.getByRole('radio', { name: 'Vender' })).not.toBeDisabled();
+    await choose('Vender');
+    expect(screen.getByText('Vender GARO')).toBeOnTheScreen();
+  });
+
+  it('si NO tenés el activo, Vender está deshabilitado y se explica por qué', async () => {
+    withPortfolio(sinTenencias);
+    await renderScreen();
+    await screen.findByText('Efectivo disponible');
+
+    expect(screen.getByRole('radio', { name: 'Vender' })).toBeDisabled();
+    expect(screen.getByText('No tenés acciones de GARO para vender.')).toBeOnTheScreen();
+
+    await choose('Vender');
+    expect(screen.getByText('Comprar GARO')).toBeOnTheScreen(); // no cambió
+  });
+
+  it('con el activo en cartera no aparece el aviso', async () => {
+    await renderScreen();
+    await screen.findByText('Efectivo disponible');
+
+    expect(screen.queryByText(/para vender/)).not.toBeOnTheScreen();
+  });
+
+  it('si se abre en modo venta pero no tenés el activo, arranca comprando', async () => {
+    withPortfolio(sinTenencias);
+    await renderScreen({ ...params, side: 'SELL' });
+    await screen.findByText('Efectivo disponible');
+
+    expect(await screen.findByText('Comprar GARO')).toBeOnTheScreen();
+    expect(screen.getByRole('radio', { name: 'Comprar' })).toBeSelected();
   });
 });

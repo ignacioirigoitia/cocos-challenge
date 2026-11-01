@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { Big } from 'big.js';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
@@ -66,6 +66,13 @@ export function OrderScreen({ params, onClose }: Props) {
     },
     resolver: schema ? zodResolver(schema) : undefined,
   });
+  // Si se abrió en modo venta pero no se tiene el activo, se arranca comprando.
+  const canSell = held.gt(0);
+  useEffect(() => {
+    if (portfolio.data && !canSell && form.getValues('side') === 'SELL')
+      form.setValue('side', 'BUY');
+  }, [portfolio.data, canSell, form]);
+
   const values = useWatch({ control: form.control });
   const preview = schema?.safeParse(values);
   const cost = preview?.success ? preview.data.cost : null;
@@ -186,6 +193,7 @@ export function OrderScreen({ params, onClose }: Props) {
       </Text>
       <OrderForm
         form={form}
+        ticker={params.ticker}
         cash={portfolio.data.cash}
         held={held}
         lastPrice={lastPrice}

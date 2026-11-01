@@ -4,11 +4,12 @@ import { Text, View } from 'react-native';
 
 import { formatARS, parseUserNumber } from '@/shared/money/money';
 import { Button } from '@/shared/ui/Button';
-import { SegmentedControl } from '@/shared/ui/SegmentedControl';
+import { type SegmentOption, SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { TextField } from '@/shared/ui/TextField';
 import { useTheme } from '@/shared/ui/theme';
 
 import type { OrderFormResult, OrderFormValues } from '../formSchema';
+import type { Side } from '../types';
 import { quantityLabel } from '../labels';
 import { quantityFromAmount } from '../orderMath';
 import { SummaryRow } from './SummaryRow';
@@ -17,6 +18,7 @@ export type OrderFormApi = UseFormReturn<OrderFormValues, undefined, OrderFormRe
 
 interface Props {
   form: OrderFormApi;
+  ticker: string;
   cash: Big;
   held: Big;
   lastPrice: Big;
@@ -27,10 +29,6 @@ interface Props {
   onReview: () => void;
 }
 
-const SIDES = [
-  { value: 'BUY', label: 'Comprar' },
-  { value: 'SELL', label: 'Vender' },
-] as const;
 const TYPES = [
   { value: 'MARKET', label: 'Mercado' },
   { value: 'LIMIT', label: 'Límite' },
@@ -40,7 +38,17 @@ const MODES = [
   { value: 'amount', label: 'Monto en $' },
 ] as const;
 
-export function OrderForm({ form, cash, held, lastPrice, cost, busy, error, onReview }: Props) {
+export function OrderForm({
+  form,
+  ticker,
+  cash,
+  held,
+  lastPrice,
+  cost,
+  busy,
+  error,
+  onReview,
+}: Props) {
   const { colors, spacing, fontSize } = useTheme();
   const { control } = form;
   const values = useWatch({ control });
@@ -49,6 +57,14 @@ export function OrderForm({ form, cash, held, lastPrice, cost, busy, error, onRe
   const amount = values.mode === 'amount' ? parseUserNumber(values.amountText ?? '') : null;
   const estimatedQuantity = amount?.gt(0) ? quantityFromAmount(amount, lastPrice) : null;
   const cashText = formatARS(cash);
+
+  // Vender solo tiene sentido si se tiene el activo: se sabe de antemano, no hace falta esperar a
+  // que el usuario toque "Revisar orden" para avisarle.
+  const canSell = held.gt(0);
+  const sides: SegmentOption<Side>[] = [
+    { value: 'BUY', label: 'Comprar', activeColor: colors.positive },
+    { value: 'SELL', label: 'Vender', activeColor: colors.negative, disabled: !canSell },
+  ];
 
   return (
     <View>
@@ -59,12 +75,17 @@ export function OrderForm({ form, cash, held, lastPrice, cost, busy, error, onRe
           render={({ field }) => (
             <SegmentedControl
               label="Operación"
-              options={SIDES}
+              options={sides}
               value={field.value}
               onChange={field.onChange}
             />
           )}
         />
+        {!canSell && (
+          <Text style={{ color: colors.textSecondary, fontSize: fontSize.sm }}>
+            {`No tenés acciones de ${ticker} para vender.`}
+          </Text>
+        )}
         <Controller
           control={control}
           name="type"
