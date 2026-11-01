@@ -26,6 +26,26 @@ export function statusForType(type: OrderType, status: ParsedStatus): ParsedStat
   return ALLOWED[type].includes(status) ? status : 'UNKNOWN';
 }
 
+/**
+ * En el historial, una orden límite sí puede figurar como ejecutada (se resolvió con el tiempo);
+ * una a mercado sigue sin poder estar en espera.
+ */
+export function statusForHistory(type: OrderType, status: ParsedStatus): ParsedStatus {
+  return type === 'MARKET' ? statusForType('MARKET', status) : status;
+}
+
+const LABELS: Record<ParsedStatus, string> = {
+  FILLED: 'Ejecutada',
+  PENDING: 'Pendiente',
+  REJECTED: 'Rechazada',
+  UNKNOWN: 'Estado inesperado',
+};
+
+/** Etiqueta corta para listas (el texto largo para el resultado está en orderStatusInfo). */
+export function orderStatusLabel(status: ParsedStatus): string {
+  return LABELS[status];
+}
+
 /** Texto para el usuario: nunca se muestran los códigos técnicos de la API. */
 export function orderStatusInfo(status: ParsedStatus, side: Side) {
   switch (status) {

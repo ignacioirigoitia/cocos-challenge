@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { parsePrice } from '@/shared/money/money';
 
-import { parseOrderStatus, statusForType } from './status';
+import { type ParsedStatus, parseOrderStatus, statusForType } from './status';
 import type { OrderType, Side } from './types';
 
 /** Lo que el usuario quiere enviar, ya validado y con los números como Big. */
@@ -30,17 +30,25 @@ export function toOrderBody(request: OrderRequest) {
 }
 
 // Estructura estricta (id, instrumento, lado, tipo y cantidad); estado y precio tolerantes.
-export const OrderResponseSchema = z
-  .object({
-    id: z.number(),
-    instrument_id: z.number(),
-    side: z.enum(['BUY', 'SELL']),
-    type: z.enum(['MARKET', 'LIMIT']),
-    quantity: z.number().int().positive(),
-    price: z.unknown(),
-    status: z.unknown(),
-  })
-  .transform((o) => ({
+export const OrderShape = z.object({
+  id: z.number(),
+  instrument_id: z.number(),
+  side: z.enum(['BUY', 'SELL']),
+  type: z.enum(['MARKET', 'LIMIT']),
+  quantity: z.number().int().positive(),
+  price: z.unknown(),
+  status: z.unknown(),
+});
+
+/**
+ * Convierte la orden de la API. `statusRule` decide qué estados corresponden a cada tipo (no es lo
+ * mismo la respuesta de un envío que el historial); si no corresponde, queda UNKNOWN.
+ */
+export function buildOrder(
+  o: z.infer<typeof OrderShape>,
+  statusRule: (type: OrderType, status: ParsedStatus) => ParsedStatus,
+) {
+  return {
     id: o.id,
     instrumentId: o.instrument_id,
     side: o.side,
@@ -48,9 +56,11 @@ export const OrderResponseSchema = z
     quantity: new Big(o.quantity),
     /** Precio de ejecución (MARKET) o precio límite (LIMIT). null si no vino o no es válido. */
     price: parsePrice(o.price),
-    // Si el estado no corresponde al tipo de orden, queda UNKNOWN en vez de mostrarse tal cual.
-    status: statusForType(o.type, parseOrderStatus(o.status)),
-  }));
+    status: statusRule(o.type, parseOrderStatus(o.status)),
+  };
+}
+
+export const OrderResponseSchema = OrderShape.transform((o) => buildOrder(o, statusForType));
 
 export type OrderResponse = z.output<typeof OrderResponseSchema>;
 

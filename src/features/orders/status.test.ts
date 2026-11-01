@@ -1,4 +1,4 @@
-import { orderStatusInfo, parseOrderStatus } from './status';
+import { orderStatusInfo, orderStatusLabel, parseOrderStatus, statusForHistory } from './status';
 
 describe('parseOrderStatus', () => {
   it.each(['FILLED', 'PENDING', 'REJECTED'])('reconoce %s', (status) => {
@@ -59,5 +59,31 @@ describe('orderStatusInfo', () => {
       const { title, message } = orderStatusInfo(status, 'BUY');
       expect(`${title} ${message}`).not.toMatch(/FILLED|PENDING|REJECTED/);
     }
+  });
+});
+
+describe('statusForHistory', () => {
+  it.each([
+    ['MARKET', 'FILLED', 'FILLED'],
+    ['MARKET', 'REJECTED', 'REJECTED'],
+    ['MARKET', 'PENDING', 'UNKNOWN'], // una orden a mercado no queda en espera
+    ['LIMIT', 'PENDING', 'PENDING'],
+    ['LIMIT', 'REJECTED', 'REJECTED'],
+    ['LIMIT', 'FILLED', 'FILLED'], // en el historial una límite sí puede haberse ejecutado con el tiempo
+    ['LIMIT', 'UNKNOWN', 'UNKNOWN'],
+    ['MARKET', 'UNKNOWN', 'UNKNOWN'],
+  ] as const)('%s con estado %s se muestra como %s', (type, status, expected) => {
+    expect(statusForHistory(type, status)).toBe(expected);
+  });
+});
+
+describe('orderStatusLabel', () => {
+  it.each([
+    ['FILLED', 'Ejecutada'],
+    ['PENDING', 'Pendiente'],
+    ['REJECTED', 'Rechazada'],
+    ['UNKNOWN', 'Estado inesperado'],
+  ] as const)('%s se muestra como %p', (status, label) => {
+    expect(orderStatusLabel(status)).toBe(label);
   });
 });
