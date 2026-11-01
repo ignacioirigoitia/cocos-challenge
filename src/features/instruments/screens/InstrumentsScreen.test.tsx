@@ -390,7 +390,7 @@ describe('InstrumentsScreen: búsqueda', () => {
     expect(await screen.findByText('CAPX')).toBeOnTheScreen();
   });
 
-  // Defecto conocido de la API (ver api-notes.md): /instruments y /search no coinciden en los
+  // Defecto conocido de la API (ver docs/api-notes.md): /instruments y /search no coinciden en los
   // modos con bugs. Cada pantalla muestra lo que dice su endpoint, validado por separado.
   it('muestra el precio que informa /search aunque /instruments tenga el instrumento roto', async () => {
     respondTo([mirgEnSearch]);
