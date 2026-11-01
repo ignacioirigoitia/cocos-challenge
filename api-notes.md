@@ -41,6 +41,17 @@ Origen: pruebas propias con `curl` (solo GET) + el `qa-challenge.md` del mismo r
 - Fixture real de la venta a mercado en `hard` (ejecutada a 24,44): `src/features/orders/__fixtures__/order.hard-sell-close-price.json`. La app avisa cuando el precio de ejecución difiere del que se vio en la revisión.
 - La app interpreta un estado que no corresponde al tipo (a mercado `PENDING`, o límite `FILLED`) como estado inesperado y manda a revisar el portfolio, en vez de mostrarlo tal cual.
 
+## Barrido espaciado de solo lectura (96 pedidos: 4 modos x 6 consultas x 4 rondas, orden aleatorio, ~10 s entre pedidos)
+- **Sin bloqueo, sin errores nuevos:** los 96 pedidos dieron HTTP 200 con JSON válido. No aparecieron campos faltantes ni sobrantes, tipos distintos, listas de otro largo, ni estados HTTP raros. `off` fue estable en las 4 rondas.
+- **No volvió a aparecer el `ticker` faltante de `hard`** (0 de 4 portfolios de `hard`): es un defecto intermitente y poco frecuente.
+- **Latencia:** mediana ~0,3 s en todos los modos. En `hard`, 2 de 24 pedidos tardaron ~3 s (`/orders` y `/portfolio`); en los otros modos, ninguno pasó de 0,6 s. El timeout de la app es de 10 s, así que lo tolera.
+- **`hard` / `/portfolio`: `avg_cost_price` distinto en las 4 muestras** (GARO: 24,44 en `hard` contra 25,78 en `off`, `easy` y `medium` para la misma cuenta). Es compatible con que `hard` calcule el costo por lotes (el último comprado) en vez del promedio ponderado que documenta el enunciado. No se puede detectar ni corregir desde el cliente: la ganancia y el rendimiento de esa posición se calculan con el dato de la API.
+- **`hard` / `/portfolio`: una muestra de 4 con una acción de más** (GARO 2 en vez de 1, efectivo -24,44), como si no contara una venta ya ejecutada. Es una inconsistencia entre `/portfolio` y `/orders` que solo se detectaría recalculando las posiciones desde el historial; se resuelve actualizando.
+- **`medium` / `/portfolio`: una muestra con el efectivo -10** (una orden límite todavía `PENDING` reservaba efectivo; minutos después se rechazó y se liberó). Es legítimo y depende del tiempo.
+- **`/orders`:** `off` va de la más vieja a la más nueva; en `easy`, `medium` y `hard` **no está ordenada por fecha** (ni ascendente ni descendente). Si se muestra un historial, ordenar siempre en el cliente por `created_at`. Un estado final (`FILLED`, `REJECTED`) nunca cambió; solo `PENDING` pasó a `REJECTED`.
+- **`/search`:** sin cambios entre rondas. `ars` devuelve `[]` en `easy`, `medium` y `hard` (4 de 4) y `ARS` en `off`; `DY` devuelve `DYCA` en todos.
+- **`/instruments`:** `MIRG` con `last_price: 0` en `easy`, `medium` y `hard` (4 de 4), como ya estaba documentado.
+
 ## Bloqueo de la plataforma (límite de pedidos real)
 - Tras ~110 pedidos en pocos minutos desde una misma red, la API respondió **403 con una página HTML "Vercel Security Checkpoint"** (no un 429, sin JSON, sin `Retry-After`). El bloqueo duró al menos varios minutos y alcanzó a todos los endpoints, también con `off`.
 - La app lo trata como un error propio (`blocked`): mensaje claro, sin reintentos automáticos (reintentar lo alargaría) y, en una orden, sin la duda de si llegó (el pedido nunca llegó a la API).
