@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { parsePrice } from '@/shared/money/money';
 
-import { parseOrderStatus } from './status';
+import { parseOrderStatus, statusForType } from './status';
 import type { OrderType, Side } from './types';
 
 /** Lo que el usuario quiere enviar, ya validado y con los números como Big. */
@@ -48,7 +48,8 @@ export const OrderResponseSchema = z
     quantity: new Big(o.quantity),
     /** Precio de ejecución (MARKET) o precio límite (LIMIT). null si no vino o no es válido. */
     price: parsePrice(o.price),
-    status: parseOrderStatus(o.status),
+    // Si el estado no corresponde al tipo de orden, queda UNKNOWN en vez de mostrarse tal cual.
+    status: statusForType(o.type, parseOrderStatus(o.status)),
   }));
 
 export type OrderResponse = z.output<typeof OrderResponseSchema>;

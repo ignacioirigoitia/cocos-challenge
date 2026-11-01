@@ -59,6 +59,17 @@ describe('createApiClient', () => {
     expect(init.headers).toMatchObject({ 'Content-Type': 'application/json' });
   });
 
+  it.each([200, 201])(
+    'un %s es éxito (la API usa 201 en unos modos y 200 en otros al crear)',
+    async (status) => {
+      const fetchImpl = async () => fakeResponse({ id: 7 }, status);
+
+      await expect(clientWith(fetchImpl).post('/orders', { side: 'BUY' }, Item)).resolves.toEqual({
+        id: 7,
+      });
+    },
+  );
+
   it('error HTTP: kind http, con status y el mensaje de la API', async () => {
     const fetchImpl = async () => fakeResponse({ error: 'Missing header' }, 400);
     const err = await errorOf(clientWith(fetchImpl).get('/portfolio', Item));

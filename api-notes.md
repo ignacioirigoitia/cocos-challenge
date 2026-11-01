@@ -28,7 +28,17 @@ Origen: pruebas propias con `curl` (solo GET) + el `qa-challenge.md` del mismo r
 - `/portfolio` con **`hard`: a veces una posición llega SIN el campo `ticker`** (intermitente: de dos pedidos seguidos, uno vino así). Fixture real: `src/features/portfolio/__fixtures__/portfolio.hard-sin-ticker.json`. El resto de los campos viene bien.
 - `/orders`: con `off` las órdenes vienen de la más vieja a la más nueva; con `easy`, `medium` y `hard`, de la más nueva a la más vieja. El orden **no es confiable entre modos**: ordenar siempre en el cliente por `created_at`. Fixtures: `src/features/orders/__fixtures__/orders.{off,hard}.json`.
 - `/instruments` y `/search`: ver más arriba (MIRG con precio 0; `/search` inconsistente).
-- Los defectos de `POST /orders` en `easy`/`medium`/`hard` siguen **sin probar** (requiere mandar órdenes reales a la cuenta).
+- `POST /orders`: ver la sección siguiente.
+
+## Órdenes por modo (prueba real: compra a mercado, venta a mercado y compra límite de 1 GARO, 8 s entre pedidos)
+- **`off`, `easy` y `medium` se comportan igual y bien:** a mercado se ejecutan (`FILLED`) al `last_price` (27,12) y el efectivo y las tenencias se mueven exactamente por ese monto.
+- **`hard`: dos defectos en las órdenes a mercado.**
+  1. La compra a mercado volvió **`PENDING`** (el contrato dice `FILLED` o `REJECTED`), aunque ya había movido efectivo y tenencias. En `GET /orders` la misma orden aparece luego como `FILLED`. Fixture real: `src/features/orders/__fixtures__/order.hard-market-pending.json`.
+  2. Ejecuta al **`close_price` (24,44) en vez del `last_price` (27,12)**, tanto en compra como en venta.
+- **Órdenes límite (todos los modos):** nacen `PENDING`, **reservan el efectivo** (el efectivo bajó 10 con una límite a 10) y se resuelven solas a los minutos; las que miré quedaron `REJECTED` y liberaron la reserva.
+- **Código HTTP del POST:** 201 en `off` y `easy`, 200 en `medium` y `hard`. La app acepta cualquier 2xx.
+- **Forma de la respuesta:** igual en los 4 modos (mismas claves). `price` puede venir como entero (`10`) o decimal (`27.12`).
+- La app interpreta un estado que no corresponde al tipo (a mercado `PENDING`, o límite `FILLED`) como estado inesperado y manda a revisar el portfolio, en vez de mostrarlo tal cual.
 
 ## Bloqueo de la plataforma (límite de pedidos real)
 - Tras ~110 pedidos en pocos minutos desde una misma red, la API respondió **403 con una página HTML "Vercel Security Checkpoint"** (no un 429, sin JSON, sin `Retry-After`). El bloqueo duró al menos varios minutos y alcanzó a todos los endpoints, también con `off`.

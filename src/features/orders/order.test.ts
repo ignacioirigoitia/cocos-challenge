@@ -1,5 +1,6 @@
 import { Big } from 'big.js';
 
+import hardMarketPending from './__fixtures__/order.hard-market-pending.json';
 import real from './__fixtures__/order.real.json';
 import {
   type OrderRequest,
@@ -132,5 +133,28 @@ describe('responseMatchesRequest', () => {
 
     expect(responseMatchesRequest(limitSell, parse({ ...base, price: 84.5 }))).toBe(true);
     expect(responseMatchesRequest(limitSell, parse({ ...base, price: 85 }))).toBe(false);
+  });
+});
+
+describe('coherencia entre tipo de orden y estado (contrato del enunciado)', () => {
+  it('la respuesta real de hard: una compra a mercado que vuelve PENDING queda como UNKNOWN', () => {
+    // En hard, la API devolvió PENDING para una orden a mercado que en realidad ya se había
+    // ejecutado (movió el efectivo y las tenencias). Mostrarla como "pendiente" engañaría.
+    expect(hardMarketPending.type).toBe('MARKET');
+    expect(hardMarketPending.status).toBe('PENDING');
+    expect(OrderResponseSchema.parse(hardMarketPending).status).toBe('UNKNOWN');
+  });
+
+  it.each([
+    ['MARKET', 'FILLED', 'FILLED'],
+    ['MARKET', 'REJECTED', 'REJECTED'],
+    ['MARKET', 'PENDING', 'UNKNOWN'], // una orden a mercado se ejecuta o se rechaza, no queda en espera
+    ['LIMIT', 'PENDING', 'PENDING'],
+    ['LIMIT', 'REJECTED', 'REJECTED'],
+    ['LIMIT', 'FILLED', 'UNKNOWN'], // una límite nace en espera
+  ])('%s con estado %s se interpreta como %s', (type, status, expected) => {
+    const body = { ...real, type, status, price: 10 };
+
+    expect(OrderResponseSchema.parse(body).status).toBe(expected);
   });
 });

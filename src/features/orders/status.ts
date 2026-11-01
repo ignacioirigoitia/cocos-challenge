@@ -1,4 +1,4 @@
-import type { Side } from './types';
+import type { OrderType, Side } from './types';
 
 export type OrderStatus = 'FILLED' | 'PENDING' | 'REJECTED';
 export type ParsedStatus = OrderStatus | 'UNKNOWN';
@@ -9,6 +9,21 @@ const KNOWN: readonly string[] = ['FILLED', 'PENDING', 'REJECTED'];
 /** Lo que no es un estado conocido es UNKNOWN: la app no asume qué pasó con la orden. */
 export function parseOrderStatus(value: unknown): ParsedStatus {
   return typeof value === 'string' && KNOWN.includes(value) ? (value as OrderStatus) : 'UNKNOWN';
+}
+
+// Estados válidos por tipo, según el enunciado: una orden a mercado se ejecuta o se rechaza; una
+// límite nace en espera (o se rechaza).
+const ALLOWED: Record<OrderType, readonly ParsedStatus[]> = {
+  MARKET: ['FILLED', 'REJECTED'],
+  LIMIT: ['PENDING', 'REJECTED'],
+};
+
+/**
+ * Un estado que no corresponde al tipo de orden (en hard, una orden a mercado que vuelve PENDING
+ * aunque ya movió el efectivo) no se muestra como si nada: queda como UNKNOWN.
+ */
+export function statusForType(type: OrderType, status: ParsedStatus): ParsedStatus {
+  return ALLOWED[type].includes(status) ? status : 'UNKNOWN';
 }
 
 /** Texto para el usuario: nunca se muestran los códigos técnicos de la API. */
@@ -36,9 +51,9 @@ export function orderStatusInfo(status: ParsedStatus, side: Side) {
     case 'UNKNOWN':
       return {
         tone: 'warning' as StatusTone,
-        title: 'Estado desconocido',
+        title: 'Estado inesperado',
         message:
-          'Recibimos un estado que no reconocemos. Revisá tu portfolio para confirmar qué pasó con tu orden.',
+          'Recibimos un estado que no esperábamos para esta orden. Revisá tu portfolio para confirmar qué pasó.',
       };
   }
 }

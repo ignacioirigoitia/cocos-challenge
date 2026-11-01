@@ -6,6 +6,7 @@ import { createQueryClient } from '@/shared/api/queryClient';
 import { palettes } from '@/shared/ui/theme';
 import { useSettings } from '@/shared/store/settings';
 
+import hardMarketPending from '../__fixtures__/order.hard-market-pending.json';
 import real from '../__fixtures__/order.real.json';
 import type { OrderParams } from '../params';
 import { OrderScreen } from './OrderScreen';
@@ -376,7 +377,19 @@ describe('OrderScreen: resultado', () => {
     orderResponse = async () => fakeResponse(order({ status: 'CANCELLED' }));
     await confirm();
 
-    expect(await screen.findByText('Estado desconocido')).toBeOnTheScreen();
+    expect(await screen.findByText('Estado inesperado')).toBeOnTheScreen();
+  });
+
+  it('en hard, una compra a mercado que vuelve PENDING no se muestra como "pendiente"', async () => {
+    // Respuesta real de hard: la orden a mercado volvió PENDING aunque ya se había ejecutado.
+    orderResponse = async () => fakeResponse(hardMarketPending);
+    await goToReview('1');
+    await press('Confirmar y enviar');
+
+    expect(await screen.findByText('Estado inesperado')).toBeOnTheScreen();
+    expect(screen.queryByText('Orden pendiente')).not.toBeOnTheScreen();
+    expect(screen.queryByText('Precio límite')).not.toBeOnTheScreen();
+    expect(screen.getByText(/Revisá tu portfolio/)).toBeOnTheScreen();
   });
 
   it('si la orden devuelta no coincide con la enviada, lo advierte', async () => {

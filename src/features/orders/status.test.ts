@@ -47,10 +47,10 @@ describe('orderStatusInfo', () => {
   it('UNKNOWN: avisa que hay que verificar en el portfolio', () => {
     const info = orderStatusInfo('UNKNOWN', 'BUY');
 
-    expect(info.title).toBe('Estado desconocido');
+    expect(info.title).toBe('Estado inesperado');
     expect(info.tone).toBe('warning');
     expect(info.message).toBe(
-      'Recibimos un estado que no reconocemos. Revisá tu portfolio para confirmar qué pasó con tu orden.',
+      'Recibimos un estado que no esperábamos para esta orden. Revisá tu portfolio para confirmar qué pasó.',
     );
   });
 
