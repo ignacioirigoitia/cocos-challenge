@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Pressable, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { BottomSheet } from './BottomSheet';
+import { palettes } from './theme';
 
 describe('BottomSheet', () => {
   it('muestra su contenido', async () => {
@@ -82,5 +83,17 @@ describe('BottomSheet', () => {
     );
 
     expect(screen.getAllByRole('button')).toHaveLength(1);
+  });
+
+  it('el agarrador usa un color bien visible, para que se distinga el borde de la hoja también en oscuro', async () => {
+    await render(
+      <BottomSheet onClose={jest.fn()}>
+        <Text>x</Text>
+      </BottomSheet>,
+    );
+
+    const grabber = StyleSheet.flatten(screen.getByTestId('sheet-grabber').props.style);
+
+    expect(grabber.backgroundColor).toBe(palettes.light.inputBorder);
   });
 });

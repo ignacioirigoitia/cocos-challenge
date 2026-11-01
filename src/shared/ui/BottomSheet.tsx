@@ -74,9 +74,19 @@ export function BottomSheet({ children, onClose }: Props) {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <SafeAreaView
             edges={['bottom']}
-            style={[styles.sheet, { backgroundColor: colors.background, maxHeight: height * 0.92 }]}
+            style={[
+              styles.sheet,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+                maxHeight: height * 0.92,
+              },
+            ]}
           >
-            <View style={[styles.grabber, { backgroundColor: colors.border }]} />
+            <View
+              testID="sheet-grabber"
+              style={[styles.grabber, { backgroundColor: colors.inputBorder }]}
+            />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Cerrar"
@@ -118,7 +128,13 @@ function SheetContent({
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  // El borde fino separa la hoja del fondo oscuro cuando los dos son casi negros.
+  sheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
   grabber: { alignSelf: 'center', width: 36, height: 5, borderRadius: 3, marginTop: 8 },
   // Alto mínimo de 44 pt: tamaño táctil recomendado.
   close: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
