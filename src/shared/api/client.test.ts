@@ -85,6 +85,25 @@ describe('createApiClient', () => {
     expect(err.retryAfterMs).toBeUndefined();
   });
 
+  it('403 con una página HTML (bloqueo de seguridad de la plataforma): kind blocked', async () => {
+    // Es lo que respondió la API real ("Vercel Security Checkpoint") tras una ráfaga de pedidos.
+    const fetchImpl = async () =>
+      fakeResponse('<!DOCTYPE html>...', 403, { 'content-type': 'text/html; charset=utf-8' });
+    const err = await errorOf(clientWith(fetchImpl).get('/instruments', Item));
+
+    expect(err.kind).toBe('blocked');
+    expect(err.status).toBe(403);
+  });
+
+  it('un 403 con JSON es un error HTTP común, no un bloqueo', async () => {
+    const fetchImpl = async () =>
+      fakeResponse({ error: 'Prohibido' }, 403, { 'content-type': 'application/json' });
+    const err = await errorOf(clientWith(fetchImpl).get('/portfolio', Item));
+
+    expect(err.kind).toBe('http');
+    expect(err.message).toBe('Prohibido');
+  });
+
   it('5xx: kind http con el status', async () => {
     const fetchImpl = async () => fakeResponse({}, 503);
     const err = await errorOf(clientWith(fetchImpl).get('/instruments', Item));

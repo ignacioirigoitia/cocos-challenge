@@ -78,6 +78,15 @@ export function createApiClient({
           retryAfterMs: parseRetryAfter(res.headers.get('retry-after')),
         });
       }
+      // La plataforma que aloja la API (Vercel) responde un 403 con una página HTML de "Security
+      // Checkpoint" cuando detecta demasiados pedidos seguidos. No es un 429 ni lleva JSON, y el
+      // pedido nunca llegó a la API.
+      const contentType = res.headers.get('content-type') ?? '';
+      if (res.status === 403 && contentType.includes('text/html')) {
+        throw new ApiError('blocked', 'La plataforma bloqueó temporalmente los pedidos', {
+          status: 403,
+        });
+      }
       if (!res.ok) {
         const data = (await readJson(res)) as { error?: unknown } | undefined;
         const message = typeof data?.error === 'string' ? data.error : `Error HTTP ${res.status}`;

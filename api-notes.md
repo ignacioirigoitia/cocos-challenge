@@ -23,6 +23,17 @@ Origen: pruebas propias con `curl` (solo GET) + el `qa-challenge.md` del mismo r
 - Búsqueda vacía y las demás queries probadas (`DY`, `MIRG`) coinciden con `off`.
 - Los defectos que distinguen un nivel de otro no aparecen en estos GET; probablemente estén en `/portfolio` con posiciones y en `/orders`. Pendiente de verificar al llegar a esas features.
 
+## Prueba con los 4 modos sobre una cuenta con posiciones (solo GET)
+- `/portfolio` con `off`, `easy` y `medium`: idéntico y estable (12 pedidos por modo antes del bloqueo).
+- `/portfolio` con **`hard`: a veces una posición llega SIN el campo `ticker`** (intermitente: de dos pedidos seguidos, uno vino así). Fixture real: `src/features/portfolio/__fixtures__/portfolio.hard-sin-ticker.json`. El resto de los campos viene bien.
+- `/orders`: con `off` las órdenes vienen de la más vieja a la más nueva; con `easy`, `medium` y `hard`, de la más nueva a la más vieja. El orden **no es confiable entre modos**: ordenar siempre en el cliente por `created_at`. Fixtures: `src/features/orders/__fixtures__/orders.{off,hard}.json`.
+- `/instruments` y `/search`: ver más arriba (MIRG con precio 0; `/search` inconsistente).
+- Los defectos de `POST /orders` en `easy`/`medium`/`hard` siguen **sin probar** (requiere mandar órdenes reales a la cuenta).
+
+## Bloqueo de la plataforma (límite de pedidos real)
+- Tras ~110 pedidos en pocos minutos desde una misma red, la API respondió **403 con una página HTML "Vercel Security Checkpoint"** (no un 429, sin JSON, sin `Retry-After`). El bloqueo duró al menos varios minutos y alcanzó a todos los endpoints, también con `off`.
+- La app lo trata como un error propio (`blocked`): mensaje claro, sin reintentos automáticos (reintentar lo alargaría) y, en una orden, sin la duda de si llegó (el pedido nunca llegó a la API).
+
 ## Verificado con una compra real (1 x GARO, MARKET, modo off)
 - `POST /orders` → `{id, candidate_id, instrument_id, side, type, quantity, price, status, created_at}`. En una orden `MARKET` el `price` devuelto es el precio de ejecución (27.12 = último precio). Estado `FILLED`.
 - `GET /portfolio` → `{cash, holdings: [{instrument_id, ticker, quantity, last_price, close_price, avg_cost_price}]}`. `cash` descuenta lo comprado (1.000.000 - 27,12 = 999972.88).

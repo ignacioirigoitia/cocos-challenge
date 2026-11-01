@@ -1,4 +1,4 @@
-export type ApiErrorKind = 'network' | 'timeout' | 'http' | 'rate_limit' | 'validation';
+export type ApiErrorKind = 'network' | 'timeout' | 'http' | 'rate_limit' | 'blocked' | 'validation';
 
 /** Único tipo de error que lanza la capa de API, para que la UI sepa qué mostrar. */
 export class ApiError extends Error {

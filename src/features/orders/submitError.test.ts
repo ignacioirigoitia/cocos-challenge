@@ -15,6 +15,10 @@ describe('isOutcomeUncertain', () => {
   it.each([
     ['pedido rechazado (400)', new ApiError('http', 'x', { status: 400 })],
     ['rate limit (429)', new ApiError('rate_limit', 'x', { status: 429 })],
+    [
+      'bloqueo de la plataforma (el pedido nunca llegó a la API)',
+      new ApiError('blocked', 'x', { status: 403 }),
+    ],
   ])('%s: el servidor no la procesó', (_name, error) => {
     expect(isOutcomeUncertain(error)).toBe(false);
   });

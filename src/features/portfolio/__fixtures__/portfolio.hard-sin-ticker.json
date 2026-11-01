@@ -1,0 +1,20 @@
+{
+  "cash": 999436.08,
+  "holdings": [
+    {
+      "instrument_id": 16,
+      "quantity": 1,
+      "last_price": 27.12,
+      "close_price": 24.44,
+      "avg_cost_price": 27.12
+    },
+    {
+      "instrument_id": 2,
+      "ticker": "CAPX",
+      "quantity": 10,
+      "last_price": 53.68,
+      "close_price": 49.71,
+      "avg_cost_price": 53.68
+    }
+  ]
+}

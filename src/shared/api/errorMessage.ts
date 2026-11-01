@@ -16,6 +16,8 @@ export function errorMessage(error: unknown): string {
           : 'Esperá unos segundos';
       return `Hiciste demasiados pedidos. ${wait} e intentá de nuevo.`;
     }
+    case 'blocked':
+      return 'El servicio bloqueó temporalmente los pedidos desde este dispositivo. Esperá unos minutos e intentá de nuevo.';
     case 'http':
       return (error.status ?? 0) >= 500
         ? 'El servicio tuvo un problema. Intentá de nuevo en un rato.'

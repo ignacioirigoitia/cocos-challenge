@@ -13,6 +13,10 @@ describe('shouldRetry (lecturas)', () => {
   });
 
   it.each([
+    [
+      'bloqueo temporal (reintentar solo lo alargaría)',
+      new ApiError('blocked', 'x', { status: 403 }),
+    ],
     ['400', new ApiError('http', 'x', { status: 400 })],
     ['404', new ApiError('http', 'x', { status: 404 })],
     ['datos inválidos', new ApiError('validation', 'x')],

@@ -28,6 +28,12 @@ describe('errorMessage', () => {
     );
   });
 
+  it('bloqueo temporal de la plataforma', () => {
+    expect(errorMessage(new ApiError('blocked', 'x', { status: 403 }))).toBe(
+      'El servicio bloqueó temporalmente los pedidos desde este dispositivo. Esperá unos minutos e intentá de nuevo.',
+    );
+  });
+
   it('error del servidor (5xx)', () => {
     expect(errorMessage(new ApiError('http', 'x', { status: 503 }))).toBe(
       'El servicio tuvo un problema. Intentá de nuevo en un rato.',
