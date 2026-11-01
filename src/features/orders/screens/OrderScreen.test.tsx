@@ -7,6 +7,7 @@ import { palettes } from '@/shared/ui/theme';
 import { useSettings } from '@/shared/store/settings';
 
 import hardMarketPending from '../__fixtures__/order.hard-market-pending.json';
+import hardSell from '../__fixtures__/order.hard-sell-close-price.json';
 import real from '../__fixtures__/order.real.json';
 import type { OrderParams } from '../params';
 import { OrderScreen } from './OrderScreen';
@@ -316,6 +317,7 @@ describe('OrderScreen: resultado', () => {
     expect(screen.getByText('Total')).toBeOnTheScreen();
     expect(screen.getByText('$ 271,20')).toBeOnTheScreen();
     expect(screen.queryByText(/FILLED/)).not.toBeOnTheScreen();
+    expect(screen.queryByText(/Se ejecutó a un precio distinto/)).not.toBeOnTheScreen();
   });
 
   it('envía el POST con el body correcto y refresca el portfolio', async () => {
@@ -338,6 +340,29 @@ describe('OrderScreen: resultado', () => {
 
     expect(await screen.findByText('Estimado en la revisión')).toBeOnTheScreen();
     expect(screen.getByText('$ 275,00')).toBeOnTheScreen(); // total real: 10 x 27,50
+    expect(
+      screen.getByText(
+        'Se ejecutó a un precio distinto del que viste en la revisión: $ 27,50 en lugar de $ 27,12 (+1,40%).',
+      ),
+    ).toBeOnTheScreen();
+  });
+
+  it('en hard, una venta que se ejecuta al precio de cierre avisa que fue a otro precio', async () => {
+    // Respuesta real de hard: la venta a mercado se ejecutó a 24,44 (el cierre) y no a 27,12.
+    orderResponse = async () => fakeResponse(hardSell);
+    await renderScreen({ ...params, side: 'SELL' });
+    await screen.findByText('Efectivo disponible');
+    await type('Cantidad de acciones', '1');
+    await press('Revisar orden');
+    await screen.findByText('Revisá tu orden');
+    await press('Confirmar y enviar');
+
+    expect(await screen.findByText('Orden ejecutada')).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        'Se ejecutó a un precio distinto del que viste en la revisión: $ 24,44 en lugar de $ 27,12 (-9,88%).',
+      ),
+    ).toBeOnTheScreen();
   });
 
   it('orden límite en espera: mensaje amigable y precio límite', async () => {

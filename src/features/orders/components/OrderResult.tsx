@@ -5,6 +5,7 @@ import { formatARS, formatQuantity } from '@/shared/money/money';
 import { Button } from '@/shared/ui/Button';
 import { useTheme } from '@/shared/ui/theme';
 
+import { executionPriceNotice } from '../executionPrice';
 import { operationLabel } from '../labels';
 import { type OrderResponse } from '../order';
 import { orderStatusInfo } from '../status';
@@ -15,12 +16,14 @@ interface Props {
   order: OrderResponse;
   /** Costo estimado que se mostró en la revisión. */
   estimated: Big;
+  /** Precio que el usuario vio en la revisión (el actual al revisar). */
+  expectedPrice: Big;
   /** false si la orden devuelta no es la que se envió. */
   matchesRequest: boolean;
   onClose: () => void;
 }
 
-export function OrderResult({ order, estimated, matchesRequest, onClose }: Props) {
+export function OrderResult({ order, estimated, expectedPrice, matchesRequest, onClose }: Props) {
   const { colors, spacing, fontSize } = useTheme();
   const info = orderStatusInfo(order.status, order.side);
   const toneColor =
@@ -34,6 +37,7 @@ export function OrderResult({ order, estimated, matchesRequest, onClose }: Props
   const total = order.price ? estimatedCost(order.quantity, order.price) : null;
   const filled = order.status === 'FILLED';
   const pending = order.status === 'PENDING';
+  const priceNotice = filled ? executionPriceNotice(order.side, order.price, expectedPrice) : null;
 
   return (
     <View>
@@ -61,6 +65,19 @@ export function OrderResult({ order, estimated, matchesRequest, onClose }: Props
           <SummaryRow label="Estimado en la revisión" value={formatARS(estimated)} />
         )}
       </View>
+
+      {priceNotice && (
+        <Text
+          accessibilityRole={priceNotice.adverse ? 'alert' : undefined}
+          style={{
+            color: priceNotice.adverse ? colors.negative : colors.textSecondary,
+            fontSize: fontSize.md,
+            marginTop: spacing.md,
+          }}
+        >
+          {priceNotice.text}
+        </Text>
+      )}
 
       {!matchesRequest && (
         <Text style={{ color: colors.negative, fontSize: fontSize.md, marginTop: spacing.md }}>

@@ -38,6 +38,7 @@ Origen: pruebas propias con `curl` (solo GET) + el `qa-challenge.md` del mismo r
 - **Órdenes límite (todos los modos):** nacen `PENDING`, **reservan el efectivo** (el efectivo bajó 10 con una límite a 10) y se resuelven solas a los minutos; las que miré quedaron `REJECTED` y liberaron la reserva.
 - **Código HTTP del POST:** 201 en `off` y `easy`, 200 en `medium` y `hard`. La app acepta cualquier 2xx.
 - **Forma de la respuesta:** igual en los 4 modos (mismas claves). `price` puede venir como entero (`10`) o decimal (`27.12`).
+- Fixture real de la venta a mercado en `hard` (ejecutada a 24,44): `src/features/orders/__fixtures__/order.hard-sell-close-price.json`. La app avisa cuando el precio de ejecución difiere del que se vio en la revisión.
 - La app interpreta un estado que no corresponde al tipo (a mercado `PENDING`, o límite `FILLED`) como estado inesperado y manda a revisar el portfolio, en vez de mostrarlo tal cual.
 
 ## Bloqueo de la plataforma (límite de pedidos real)

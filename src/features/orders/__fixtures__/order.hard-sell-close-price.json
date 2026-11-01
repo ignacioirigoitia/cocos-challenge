@@ -1,0 +1,11 @@
+{
+  "id": 129387,
+  "candidate_id": "ignacio-irigoitia",
+  "instrument_id": 16,
+  "side": "SELL",
+  "type": "MARKET",
+  "quantity": 1,
+  "price": 24.44,
+  "status": "FILLED",
+  "created_at": "2026-11-01T03:06:43.663Z"
+}

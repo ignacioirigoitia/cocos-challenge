@@ -23,7 +23,13 @@ import { useSubmitOrder } from '../useSubmitOrder';
 type Step =
   | { name: 'form' }
   | { name: 'review'; ticker: string; result: OrderFormResult; currentPrice: Big }
-  | { name: 'result'; order: OrderResponse; request: OrderRequest; estimated: Big };
+  | {
+      name: 'result';
+      order: OrderResponse;
+      request: OrderRequest;
+      estimated: Big;
+      expectedPrice: Big;
+    };
 
 interface Props {
   params: OrderParams;
@@ -126,7 +132,8 @@ export function OrderScreen({ params, onClose }: Props) {
     if (step.name !== 'review' || submit.isPending) return;
     const { request, cost: estimated } = step.result;
     submit.mutate(request, {
-      onSuccess: (order) => setStep({ name: 'result', order, request, estimated }),
+      onSuccess: (order) =>
+        setStep({ name: 'result', order, request, estimated, expectedPrice: step.currentPrice }),
     });
   };
 
@@ -183,6 +190,7 @@ export function OrderScreen({ params, onClose }: Props) {
       <OrderResult
         order={step.order}
         estimated={step.estimated}
+        expectedPrice={step.expectedPrice}
         matchesRequest={responseMatchesRequest(step.request, step.order)}
         onClose={onClose}
       />,
