@@ -12,7 +12,12 @@ export function useSubmitOrder() {
       api.post('/orders', toOrderBody(request), OrderResponseSchema),
     // Una orden nunca se reintenta sola: si el servidor la recibió, se duplicaría.
     retry: false,
-    // El efectivo y las tenencias cambiaron: el portfolio hay que volver a pedirlo.
-    onSuccess: () => client.invalidateQueries({ queryKey: ['portfolio'] }),
+    // El efectivo y las tenencias cambiaron y hay una orden nueva: portfolio e historial se vuelven
+    // a pedir.
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: ['portfolio'] }),
+        client.invalidateQueries({ queryKey: ['orders'] }),
+      ]),
   });
 }

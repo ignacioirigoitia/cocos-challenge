@@ -121,6 +121,21 @@ describe('useSubmitOrder', () => {
   });
 });
 
+describe('useSubmitOrder: historial', () => {
+  it('al enviar la orden marca el historial como desactualizado para refrescarlo', async () => {
+    fetchMock.mockResolvedValue(fakeResponse(real));
+    client.setQueryData(['orders', 'off', 'ignacio-irigoitia'], []);
+    const { result } = await renderHook(() => useSubmitOrder(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync(request);
+    });
+
+    expect(client.getQueryState(['orders', 'off', 'ignacio-irigoitia'])?.isInvalidated).toBe(true);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
 describe('refreshOrderData', () => {
   const respond = (price: number) =>
     fetchMock.mockImplementation(async (url: string) =>
