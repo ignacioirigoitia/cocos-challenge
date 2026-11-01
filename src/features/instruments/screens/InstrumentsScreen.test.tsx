@@ -124,6 +124,34 @@ describe('InstrumentsScreen', () => {
   });
 });
 
+describe('InstrumentsScreen: orden alfabético', () => {
+  const tickersShown = () =>
+    screen.getByTestId('instruments-list').props.data.map((i: { ticker: string }) => i.ticker);
+
+  it('la lista se muestra ordenada alfabéticamente por ticker, venga como venga de la API', async () => {
+    await renderScreen(); // la API los manda como DYCA, CAPX, MIRG, ARS
+    await screen.findByText('DYCA');
+
+    expect(tickersShown()).toEqual(['ARS', 'CAPX', 'DYCA', 'MIRG']);
+  });
+
+  it('los resultados de la búsqueda también van ordenados alfabéticamente', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.includes('/search')
+        ? fakeResponse([instruments[2], instruments[1], instruments[0]])
+        : fakeResponse(instruments),
+    );
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await fireEvent.changeText(screen.getByLabelText('Buscar por ticker'), 'c');
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([u]) => String(u).includes('/search'))).toBe(true),
+    );
+    await waitFor(() => expect(tickersShown()).toEqual(['CAPX', 'DYCA', 'MIRG']));
+  });
+});
+
 describe('InstrumentsScreen: búsqueda', () => {
   const capx = instruments[1];
   const mirgEnSearch = { ...instruments[2], last_price: 40.88 }; // /search no tiene el defecto

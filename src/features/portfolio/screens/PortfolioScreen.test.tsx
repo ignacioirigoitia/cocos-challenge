@@ -194,3 +194,27 @@ describe('PortfolioScreen: respuesta real de X-Enable-Bugs: hard', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('PortfolioScreen: orden alfabético', () => {
+  it('las posiciones se muestran ordenadas alfabéticamente por ticker', async () => {
+    // La API manda GARO primero y después CAPX.
+    fetchMock.mockResolvedValue(
+      fakeResponse({
+        cash: 1000,
+        holdings: [
+          { ...garo, instrument_id: 16, ticker: 'GARO' },
+          { ...garo, instrument_id: 2, ticker: 'CAPX' },
+          { ...garo, instrument_id: 1, ticker: 'ARS' },
+        ],
+      }),
+    );
+    await renderScreen();
+    await screen.findByText('GARO');
+
+    const tickers = screen
+      .getByTestId('portfolio-list')
+      .props.data.map((h: { ticker: string }) => h.ticker);
+
+    expect(tickers).toEqual(['ARS', 'CAPX', 'GARO']);
+  });
+});

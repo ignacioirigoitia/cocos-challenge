@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -6,6 +6,7 @@ import { SearchBar } from '@/features/search/components/SearchBar';
 import { SEARCH_DEBOUNCE_MS, useSearchInstruments } from '@/features/search/useSearchInstruments';
 import { errorMessage } from '@/shared/api/errorMessage';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
+import { sortByTicker } from '@/shared/sort/byTicker';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { useTheme } from '@/shared/ui/theme';
 
@@ -32,6 +33,9 @@ export function InstrumentsScreen({ onSelect }: Props) {
   const search = useSearchInstruments(query);
   const showingSearch = isSearching && !search.isPending;
   const { data, isPending, isError, error, refetch } = showingSearch ? search : list;
+
+  // Siempre en orden alfabético, tanto la lista completa como los resultados de la búsqueda.
+  const sorted = useMemo(() => sortByTicker(data ?? []), [data]);
 
   // El spinner de "tirar para actualizar" es solo del gesto del usuario: si la lista se actualiza
   // por detrás (ej. al revisar una orden) no debe aparecer.
@@ -74,7 +78,7 @@ export function InstrumentsScreen({ onSelect }: Props) {
       ) : (
         <FlatList
           testID="instruments-list"
-          data={data}
+          data={sorted}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => <InstrumentRow instrument={item} onPress={onSelect} />}
           keyboardShouldPersistTaps="handled"

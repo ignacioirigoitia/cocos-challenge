@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { errorMessage } from '@/shared/api/errorMessage';
 import { formatARS } from '@/shared/money/money';
+import { sortByTicker } from '@/shared/sort/byTicker';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { useTheme } from '@/shared/ui/theme';
 
@@ -50,6 +51,9 @@ export function PortfolioScreen({ onSelect }: Props) {
   const { colors, spacing, fontSize } = useTheme();
   const { data, isPending, isError, error, refetch } = usePortfolio();
 
+  // Las posiciones siempre en orden alfabético.
+  const holdings = useMemo(() => sortByTicker(data?.holdings ?? []), [data]);
+
   // El spinner de "tirar para actualizar" es solo del gesto del usuario: si la lista se actualiza
   // por detrás (ej. al revisar una orden) no debe aparecer.
   const [pulling, setPulling] = useState(false);
@@ -85,7 +89,7 @@ export function PortfolioScreen({ onSelect }: Props) {
       ) : (
         <FlatList
           testID="portfolio-list"
-          data={data.holdings}
+          data={holdings}
           keyExtractor={(item) => String(item.instrumentId)}
           renderItem={({ item }) => <PositionRow holding={item} onPress={onSelect} />}
           ListHeaderComponent={<Summary portfolio={data} />}
