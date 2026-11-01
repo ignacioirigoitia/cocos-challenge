@@ -22,6 +22,7 @@ export function SettingsScreen() {
   const { colors, spacing, fontSize } = useTheme();
   const theme = useSettings((s) => s.theme);
   const setTheme = useSettings((s) => s.setTheme);
+  const candidateId = useSettings((s) => s.candidateId);
   const bugMode = useSettings((s) => s.bugMode);
   const setBugMode = useSettings((s) => s.setBugMode);
 
@@ -41,6 +42,19 @@ export function SettingsScreen() {
 
       <Section title="Tema">
         <SegmentedControl label="Tema" options={THEME_OPTIONS} value={theme} onChange={setTheme} />
+      </Section>
+
+      <Section title="Cuenta">
+        <Text
+          selectable
+          accessibilityLabel={`Identificador de tu cuenta: ${candidateId}`}
+          style={{ color: colors.text, fontSize: fontSize.lg, fontWeight: '600' }}
+        >
+          {candidateId}
+        </Text>
+        <Text style={{ color: colors.textSecondary, fontSize: fontSize.sm, marginTop: spacing.sm }}>
+          Es tu cuenta de prueba en la API. Tus órdenes y tu efectivo son solo de esta instalación.
+        </Text>
       </Section>
 
       {/* __DEV__ es false en las builds de producción: el selector no existe para el usuario final. */}

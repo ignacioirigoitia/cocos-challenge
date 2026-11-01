@@ -43,4 +43,31 @@ describe('SettingsScreen', () => {
     // el tema sigue disponible
     expect(screen.getByRole('radio', { name: 'Claro' })).toBeOnTheScreen();
   });
+
+  it('muestra el id de la cuenta de esta instalación y explica qué es', async () => {
+    await render(<SettingsScreen />);
+
+    expect(screen.getByText('Cuenta')).toBeOnTheScreen();
+    expect(
+      screen.getByLabelText('Identificador de tu cuenta: ignacio-irigoitia'),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        'Es tu cuenta de prueba en la API. Tus órdenes y tu efectivo son solo de esta instalación.',
+      ),
+    ).toBeOnTheScreen();
+  });
+
+  it('el id de la cuenta se puede seleccionar para copiarlo', async () => {
+    await render(<SettingsScreen />);
+
+    expect(screen.getByText('ignacio-irigoitia').props.selectable).toBe(true);
+  });
+
+  it('la cuenta se muestra también en producción (no es una herramienta de desarrollo)', async () => {
+    globals.__DEV__ = false;
+    await render(<SettingsScreen />);
+
+    expect(screen.getByText('Cuenta')).toBeOnTheScreen();
+  });
 });
