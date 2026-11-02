@@ -16,6 +16,10 @@ export function CompositionPie({ cash, holdings }: { cash: Big; holdings: Holdin
   const { colors, spacing, fontSize } = useTheme();
   const slices = calcComposition(cash, holdings);
 
+  // Sin posiciones (cuenta nueva) sería un círculo entero de efectivo: no dice nada que no diga el
+  // efectivo disponible de arriba. Si hay posiciones pero falta algún precio, sí avisa abajo.
+  if (holdings.length === 0) return null;
+
   // Cada posición toma un color por su lugar (en orden alfabético); el efectivo siempre es gris.
   const colorOf = (key: string) =>
     key === 'cash'

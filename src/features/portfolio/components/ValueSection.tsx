@@ -1,7 +1,7 @@
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { Big } from 'big.js';
 import { useMemo } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import type { HistoryOrder } from '@/features/orders/history/schema';
 import { ErrorState } from '@/shared/ui/ErrorState';
@@ -18,7 +18,9 @@ interface Props {
 
 /**
  * Evolución del valor de la cuenta, armada con las órdenes. Es independiente del resto de la
- * pantalla: si las órdenes fallan o tardan, el portfolio se ve igual y esta sección avisa por su cuenta.
+ * pantalla: si las órdenes fallan, el portfolio se ve igual y esta sección avisa por su cuenta.
+ * Mientras carga o si todavía no hay movimientos (cuenta nueva) no se muestra: un título con la
+ * sección vacía no aporta nada, y un indicador que después desaparece haría saltar la pantalla.
  */
 export function ValueSection({ orders, totalValue }: Props) {
   const { colors, spacing, fontSize } = useTheme();
@@ -26,6 +28,8 @@ export function ValueSection({ orders, totalValue }: Props) {
     () => valueSeries(orders.data ?? [], INITIAL_CAPITAL, totalValue, new Date()),
     [orders.data, totalValue],
   );
+
+  if (!orders.isError && (orders.isPending || points.length === 0)) return null;
 
   return (
     <View style={{ padding: spacing.lg }}>
@@ -41,18 +45,12 @@ export function ValueSection({ orders, totalValue }: Props) {
         Valor estimado con los precios de tus órdenes.
       </Text>
 
-      {orders.isPending ? (
-        <ActivityIndicator accessibilityLabel="Cargando movimientos" color={colors.text} />
-      ) : orders.isError ? (
+      {orders.isError ? (
         <ErrorState
           compact
           message="No pudimos cargar los movimientos."
           onRetry={() => orders.refetch()}
         />
-      ) : points.length === 0 ? (
-        <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }}>
-          Todavía no hay movimientos.
-        </Text>
       ) : (
         <ValueChart points={points} />
       )}

@@ -312,14 +312,15 @@ describe('PortfolioScreen: evolución del valor de la cuenta', () => {
   const chartLabel = /^Evolución del valor de la cuenta, estimada/;
 
   it('tiene título y aclara que es una estimación', async () => {
+    serve({ body: real }, { body: [compra] });
     await renderScreen();
-    await screen.findByTestId('portfolio-list');
+    await screen.findByLabelText(chartLabel);
 
     expect(screen.getByRole('header', { name: 'Evolución de la cuenta' })).toBeOnTheScreen();
     expect(screen.getByText('Valor estimado con los precios de tus órdenes.')).toBeOnTheScreen();
   });
 
-  it('mientras cargan las órdenes muestra un indicador y el portfolio ya se ve', async () => {
+  it('mientras cargan las órdenes no muestra la sección (ni un indicador que después desaparezca)', async () => {
     fetchMock.mockImplementation((url: string) =>
       String(url).includes('/orders')
         ? new Promise<Response>(() => undefined)
@@ -328,7 +329,8 @@ describe('PortfolioScreen: evolución del valor de la cuenta', () => {
     await renderScreen();
 
     expect(await screen.findByTestId('portfolio-list')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Cargando movimientos')).toBeOnTheScreen();
+    expect(screen.queryByText('Evolución de la cuenta')).not.toBeOnTheScreen();
+    expect(screen.queryByLabelText('Cargando movimientos')).not.toBeOnTheScreen();
   });
 
   it('con órdenes dibuja el gráfico: dice de qué valor a qué valor pasó y marca 5 referencias', async () => {
@@ -383,11 +385,20 @@ describe('PortfolioScreen: evolución del valor de la cuenta', () => {
     expect(d).not.toMatch(/NaN|Infinity/);
   });
 
-  it('sin órdenes ejecutadas lo avisa en vez de dibujar un gráfico vacío', async () => {
+  it('en una cuenta nueva (sin órdenes) la sección no aparece', async () => {
+    await renderScreen(); // /orders devuelve []
+    await screen.findByTestId('portfolio-list');
+
+    expect(screen.queryByText('Evolución de la cuenta')).not.toBeOnTheScreen();
+    expect(screen.queryByText('Todavía no hay movimientos.')).not.toBeOnTheScreen();
+  });
+
+  it('si ninguna orden se ejecutó (rechazadas o pendientes) tampoco aparece', async () => {
     serve({ body: real }, { body: [{ ...compra, status: 'REJECTED', type: 'LIMIT' }] });
     await renderScreen();
+    await screen.findByTestId('portfolio-list');
 
-    expect(await screen.findByText('Todavía no hay movimientos.')).toBeOnTheScreen();
+    expect(screen.queryByText('Evolución de la cuenta')).not.toBeOnTheScreen();
   });
 
   it('si fallan las órdenes, el portfolio sigue funcionando y se puede reintentar', async () => {
@@ -395,6 +406,7 @@ describe('PortfolioScreen: evolución del valor de la cuenta', () => {
     await renderScreen();
 
     expect(await screen.findByText('No pudimos cargar los movimientos.')).toBeOnTheScreen();
+    expect(screen.getByText('Evolución de la cuenta')).toBeOnTheScreen();
     expect(screen.getByLabelText(/^GARO, 1 acción/)).toBeOnTheScreen();
     expect(screen.getByLabelText(/^Valor total/)).toBeOnTheScreen();
 
@@ -486,13 +498,13 @@ describe('PortfolioScreen: composición de la cartera', () => {
     expect(screen.getByTestId('legend-dot-cash')).toHaveStyle({ backgroundColor: cashSliceColor });
   });
 
-  it('con solo efectivo muestra el 100% en una sola porción', async () => {
+  it('en una cuenta nueva (solo efectivo, sin posiciones) la torta no aparece', async () => {
     serve({ body: { cash: 1000000, holdings: [] } });
     await renderScreen();
+    await screen.findByText('Todavía no tenés posiciones.');
 
-    expect(
-      await screen.findByLabelText('Composición de la cartera: Efectivo disponible 100,00%'),
-    ).toBeOnTheScreen();
+    expect(screen.queryByText('Composición de tu cartera')).not.toBeOnTheScreen();
+    expect(screen.queryByTestId('legend-cash')).not.toBeOnTheScreen();
   });
 
   it('una posición chiquita igual figura en la leyenda con su porcentaje (aunque casi no se vea)', async () => {
