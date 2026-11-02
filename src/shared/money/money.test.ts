@@ -1,6 +1,7 @@
 import { Big } from 'big.js';
 
 import {
+  calcAccountReturn,
   calcPosition,
   calcReturnPct,
   formatARS,
@@ -207,5 +208,38 @@ describe('calcReturnPct', () => {
 
   it('devuelve null si el cierre es 0 (no se puede dividir)', () => {
     expect(calcReturnPct(new Big('10'), new Big('0'))).toBeNull();
+  });
+});
+
+describe('calcAccountReturn', () => {
+  const initial = new Big('1000000');
+
+  it('ganancia y % de la cuenta contra el capital inicial', () => {
+    const r = calcAccountReturn(new Big('1000250'), initial);
+
+    expect(r?.gain.toString()).toBe('250');
+    expect(r?.pct.toString()).toBe('0.025');
+  });
+
+  it('una pérdida da valores negativos', () => {
+    const r = calcAccountReturn(new Big('990000'), initial);
+
+    expect(r?.gain.toString()).toBe('-10000');
+    expect(r?.pct.toString()).toBe('-1');
+  });
+
+  it('si el total es igual al capital inicial no hay resultado: 0 y 0%', () => {
+    const r = calcAccountReturn(new Big('1000000.00'), initial);
+
+    expect(r?.gain.toString()).toBe('0');
+    expect(r?.pct.toString()).toBe('0');
+  });
+
+  it('sin total (falta algún precio) no hay rendimiento: null y no 0', () => {
+    expect(calcAccountReturn(null, initial)).toBeNull();
+  });
+
+  it('con capital inicial 0 no divide: null', () => {
+    expect(calcAccountReturn(new Big('10'), new Big('0'))).toBeNull();
   });
 });

@@ -3,20 +3,34 @@ import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } f
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { errorMessage } from '@/shared/api/errorMessage';
-import { formatARS } from '@/shared/money/money';
+import { useOrders } from '@/features/orders/history/useOrders';
+import { calcAccountReturn, formatARS, formatPct, formatSignedARS } from '@/shared/money/money';
 import { sortByTicker } from '@/shared/sort/byTicker';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { useTheme } from '@/shared/ui/theme';
 
+import { MovementsSection } from '../components/MovementsSection';
 import { PositionRow } from '../components/PositionRow';
 import type { Holding, Portfolio } from '../schema';
+import { INITIAL_CAPITAL } from '../invested';
 import { calcTotals } from '../totals';
 import { usePortfolio } from '../usePortfolio';
 
 function Summary({ portfolio }: { portfolio: Portfolio }) {
   const { colors, spacing, fontSize } = useTheme();
-  const total = formatARS(calcTotals(portfolio.cash, portfolio.holdings).totalValue);
+  const totalValue = calcTotals(portfolio.cash, portfolio.holdings).totalValue;
+  const total = formatARS(totalValue);
   const cash = formatARS(portfolio.cash);
+
+  // Resultado de la cuenta contra el capital con el que arrancó (1.000.000 en una cuenta nueva).
+  const result = calcAccountReturn(totalValue, INITIAL_CAPITAL);
+  const resultText = result ? `${formatSignedARS(result.gain)} · ${formatPct(result.pct)}` : '--';
+  const resultColor = result?.gain.gt(0)
+    ? colors.positive
+    : result?.gain.lt(0)
+      ? colors.negative
+      : colors.textSecondary;
+  const initial = formatARS(INITIAL_CAPITAL);
 
   return (
     <View style={{ padding: spacing.lg }}>
@@ -28,6 +42,18 @@ function Summary({ portfolio }: { portfolio: Portfolio }) {
       >
         {total}
       </Text>
+      <View
+        accessible
+        accessibilityLabel={`Rendimiento de la cuenta, ${result ? resultText : 'sin dato'}, contra un capital inicial de ${initial}`}
+        style={{ marginTop: spacing.xs }}
+      >
+        <Text style={{ color: resultColor, fontSize: fontSize.lg, fontWeight: '600' }}>
+          {resultText}
+        </Text>
+        <Text style={{ color: colors.textSecondary, fontSize: fontSize.sm }}>
+          {`Capital inicial ${initial}`}
+        </Text>
+      </View>
       <View
         accessible
         accessibilityLabel={`Efectivo disponible, ${cash}`}
@@ -50,6 +76,7 @@ interface Props {
 export function PortfolioScreen({ onSelect }: Props) {
   const { colors, spacing, fontSize } = useTheme();
   const { data, isPending, isError, error, refetch } = usePortfolio();
+  const orders = useOrders(); // el mismo caché que la pestaña Órdenes: no suma pedidos
 
   // Las posiciones siempre en orden alfabético.
   const holdings = useMemo(() => sortByTicker(data?.holdings ?? []), [data]);
@@ -60,7 +87,7 @@ export function PortfolioScreen({ onSelect }: Props) {
   const onPull = async () => {
     setPulling(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), orders.refetch()]);
     } finally {
       setPulling(false);
     }
@@ -92,7 +119,12 @@ export function PortfolioScreen({ onSelect }: Props) {
           data={holdings}
           keyExtractor={(item) => String(item.instrumentId)}
           renderItem={({ item }) => <PositionRow holding={item} onPress={onSelect} />}
-          ListHeaderComponent={<Summary portfolio={data} />}
+          ListHeaderComponent={
+            <>
+              <Summary portfolio={data} />
+              <MovementsSection orders={orders} />
+            </>
+          }
           ItemSeparatorComponent={() => (
             <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border }} />
           )}

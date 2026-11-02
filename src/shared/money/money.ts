@@ -53,6 +53,19 @@ export function calcPosition(
   return { marketValue, gain, returnPct: cost.eq(0) ? null : gain.div(cost).times(100) };
 }
 
+/**
+ * Resultado de la cuenta contra el capital con el que arrancó: ganancia en $ y en %.
+ * null si no hay total (falta algún precio) o el capital es 0: nunca se inventa un 0.
+ */
+export function calcAccountReturn(
+  totalValue: Big | null,
+  initialCapital: Big,
+): { gain: Big; pct: Big } | null {
+  if (!totalValue || initialCapital.eq(0)) return null;
+  const gain = totalValue.minus(initialCapital);
+  return { gain, pct: gain.div(initialCapital).times(100) };
+}
+
 const NO_DATA = '--';
 
 function round2(value: Big): Big {

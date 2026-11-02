@@ -32,7 +32,7 @@ Un id que ya quedó guardado en el dispositivo no se pisa con la variable.
 ## Qué hace
 
 - **Mercado:** lista de instrumentos con último precio y retorno del día (último precio contra cierre), buscador por ticker y dos filtros rápidos (mayores subas y mayores bajas; sin ninguno activo va en orden alfabético). No incluye la moneda ARS: los pesos son el efectivo de la cuenta y no se operan.
-- **Portfolio:** efectivo disponible, valor total, y por cada posición cantidad, valor de mercado, ganancia en pesos y rendimiento en porcentaje.
+- **Portfolio:** efectivo disponible, valor total, y por cada posición cantidad, valor de mercado, ganancia en pesos y rendimiento en porcentaje. Arriba muestra el rendimiento de la cuenta contra el capital inicial (se asume $ 1.000.000, que es con lo que arranca una cuenta nueva) y un gráfico del capital invertido: compras menos ventas ejecutadas, armado con el historial de órdenes (la API no da precios históricos, así que no estima cuánto valía la cuenta en cada momento).
 - **Órdenes:** compra y venta, a mercado o límite, indicando cantidad de acciones o monto en pesos. El flujo es formulario, revisión y resultado. En la revisión se vuelven a pedir precio, efectivo y tenencias para confirmar con datos frescos. También hay un historial de órdenes.
 - **Ajustes:** tema claro, oscuro o del sistema, y la cuenta de esta instalación. Solo en desarrollo aparece el selector del modo de bugs de la API (`X-Enable-Bugs`: off, easy, medium, hard).
 
@@ -71,6 +71,7 @@ Las respuestas reales que fui guardando están como fixtures en la carpeta `__fi
 - **`/search` vs `/instruments`:** en los modos con bugs no coinciden (por ejemplo `ars` devuelve vacío). Lo dejé documentado, porque no hay forma de arreglarlo del lado del cliente.
 - **Latencia ocasional** de unos 3 segundos en `hard`: el timeout de la app es de 10 segundos.
 - **Bloqueo de la plataforma:** una ráfaga de unos 110 pedidos hizo que Vercel respondiera 403 con una página HTML, no un 429. Lo trato como un error propio (`blocked`) y no reintento.
+- **Ganancia por posición contra rendimiento de la cuenta:** la ganancia de cada posición usa el `avg_cost_price` de la API, que es un promedio ponderado y no se recalcula al vender. Si hubo compras y ventas a precios distintos (en `hard` las órdenes a mercado se ejecutan al cierre), una posición puede mostrar una ganancia que no existió en efectivo. El rendimiento de la cuenta sale del valor total y no tiene ese problema.
 - **Cantidad por monto:** se calcula con el último precio visto, también en las órdenes límite.
 
 ## Estructura
@@ -96,7 +97,7 @@ El alias `@/` apunta a `src/`.
 
 ## Stack
 
-React Native, TypeScript, Expo (SDK 58), Expo Router, React Query, Zustand, react-hook-form, Zod, big.js, Jest y React Native Testing Library. Gestor de paquetes: npm.
+React Native, TypeScript, Expo (SDK 58), Expo Router, React Query, Zustand, react-hook-form, Zod, big.js, react-native-svg (el gráfico), Jest y React Native Testing Library. Gestor de paquetes: npm.
 
 ## Qué no hice
 
