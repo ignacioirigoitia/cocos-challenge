@@ -41,5 +41,13 @@ export function Button({ label, onPress, variant = 'primary', disabled = false }
 
 const styles = StyleSheet.create({
   // Alto mínimo de 48 pt: tamaño táctil cómodo para el botón principal.
-  button: { minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  // paddingHorizontal: si el botón no ocupa todo el ancho (pantallas centradas) el texto no queda
+  // pegado a los bordes.
+  button: {
+    minHeight: 48,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
