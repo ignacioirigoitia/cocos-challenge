@@ -1,5 +1,5 @@
 import { contrastRatio } from './contrast';
-import { palettes } from './theme';
+import { cashSliceColor, palettes, sliceColors } from './theme';
 
 // WCAG 2.1 AA: 4,5 a 1 para texto normal y 3 a 1 para el borde de un componente de entrada.
 const TEXT_MIN = 4.5;
@@ -29,5 +29,18 @@ describe.each(['light', 'dark'] as const)('paleta %s', (scheme) => {
     expect(contrastRatio(colors.inputBorder, colors.background)).toBeGreaterThanOrEqual(
       BOUNDARY_MIN,
     );
+  });
+});
+
+// Las porciones de la torta son gráficos (no texto): WCAG pide 3 a 1 contra el fondo.
+describe.each(['light', 'dark'] as const)('colores de la torta en %s', (scheme) => {
+  const background = palettes[scheme].background;
+
+  it.each([...sliceColors, cashSliceColor])('%s se distingue del fondo (3 a 1)', (color) => {
+    expect(contrastRatio(color, background)).toBeGreaterThanOrEqual(BOUNDARY_MIN);
+  });
+
+  it('no hay dos porciones del mismo color', () => {
+    expect(new Set([...sliceColors, cashSliceColor]).size).toBe(sliceColors.length + 1);
   });
 });

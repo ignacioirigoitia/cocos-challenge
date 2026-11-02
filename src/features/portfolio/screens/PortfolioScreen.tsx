@@ -1,24 +1,25 @@
+import type { Big } from 'big.js';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { errorMessage } from '@/shared/api/errorMessage';
 import { useOrders } from '@/features/orders/history/useOrders';
+import { errorMessage } from '@/shared/api/errorMessage';
 import { calcAccountReturn, formatARS, formatPct, formatSignedARS } from '@/shared/money/money';
 import { sortByTicker } from '@/shared/sort/byTicker';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { useTheme } from '@/shared/ui/theme';
 
-import { MovementsSection } from '../components/MovementsSection';
+import { CompositionPie } from '../components/CompositionPie';
 import { PositionRow } from '../components/PositionRow';
+import { ValueSection } from '../components/ValueSection';
 import type { Holding, Portfolio } from '../schema';
-import { INITIAL_CAPITAL } from '../invested';
 import { calcTotals } from '../totals';
 import { usePortfolio } from '../usePortfolio';
+import { INITIAL_CAPITAL } from '../valueSeries';
 
-function Summary({ portfolio }: { portfolio: Portfolio }) {
+function Summary({ portfolio, totalValue }: { portfolio: Portfolio; totalValue: Big | null }) {
   const { colors, spacing, fontSize } = useTheme();
-  const totalValue = calcTotals(portfolio.cash, portfolio.holdings).totalValue;
   const total = formatARS(totalValue);
   const cash = formatARS(portfolio.cash);
 
@@ -30,7 +31,6 @@ function Summary({ portfolio }: { portfolio: Portfolio }) {
     : result?.gain.lt(0)
       ? colors.negative
       : colors.textSecondary;
-  const initial = formatARS(INITIAL_CAPITAL);
 
   return (
     <View style={{ padding: spacing.lg }}>
@@ -44,15 +44,13 @@ function Summary({ portfolio }: { portfolio: Portfolio }) {
       </Text>
       <View
         accessible
-        accessibilityLabel={`Rendimiento de la cuenta, ${result ? resultText : 'sin dato'}, contra un capital inicial de ${initial}`}
-        style={{ marginTop: spacing.xs }}
+        accessibilityLabel={`Rendimiento histórico de la cuenta, ${result ? resultText : 'sin dato'}`}
+        style={[styles.resultRow, { marginTop: spacing.xs }]}
       >
         <Text style={{ color: resultColor, fontSize: fontSize.lg, fontWeight: '600' }}>
           {resultText}
         </Text>
-        <Text style={{ color: colors.textSecondary, fontSize: fontSize.sm }}>
-          {`Capital inicial ${initial}`}
-        </Text>
+        <Text style={{ color: colors.textSecondary, fontSize: fontSize.md }}>histórico</Text>
       </View>
       <View
         accessible
@@ -80,6 +78,10 @@ export function PortfolioScreen({ onSelect }: Props) {
 
   // Las posiciones siempre en orden alfabético.
   const holdings = useMemo(() => sortByTicker(data?.holdings ?? []), [data]);
+  const totalValue = useMemo(
+    () => (data ? calcTotals(data.cash, data.holdings).totalValue : null),
+    [data],
+  );
 
   // El spinner de "tirar para actualizar" es solo del gesto del usuario: si la lista se actualiza
   // por detrás (ej. al revisar una orden) no debe aparecer.
@@ -121,10 +123,23 @@ export function PortfolioScreen({ onSelect }: Props) {
           renderItem={({ item }) => <PositionRow holding={item} onPress={onSelect} />}
           ListHeaderComponent={
             <>
-              <Summary portfolio={data} />
-              <MovementsSection orders={orders} />
+              <Summary portfolio={data} totalValue={totalValue} />
+              <ValueSection orders={orders} totalValue={totalValue} />
+              <Text
+                accessibilityRole="header"
+                style={{
+                  color: colors.text,
+                  fontSize: fontSize.lg,
+                  fontWeight: '700',
+                  paddingHorizontal: spacing.lg,
+                  paddingBottom: spacing.sm,
+                }}
+              >
+                Tus instrumentos
+              </Text>
             </>
           }
+          ListFooterComponent={<CompositionPie cash={data.cash} holdings={holdings} />}
           ItemSeparatorComponent={() => (
             <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border }} />
           )}
@@ -150,4 +165,5 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   cashRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  resultRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
 });

@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 
 import { createQueryClient } from '@/shared/api/queryClient';
 import { useSettings } from '@/shared/store/settings';
-import { palettes } from '@/shared/ui/theme';
+import { cashSliceColor, palettes, sliceColors } from '@/shared/ui/theme';
 
 import hardSinTicker from '../__fixtures__/portfolio.hard-sin-ticker.json';
 import real from '../__fixtures__/portfolio.real.json';
@@ -96,17 +96,16 @@ describe('PortfolioScreen', () => {
     await renderScreen();
 
     expect(screen.getByLabelText('Cargando portfolio')).toBeOnTheScreen();
-    expect(await screen.findByText('GARO')).toBeOnTheScreen(); // espera a que termine
+    expect(await screen.findByTestId('portfolio-list')).toBeOnTheScreen(); // espera a que termine
   });
 
   it('muestra el valor total, el efectivo y la posición', async () => {
     await renderScreen();
 
-    expect(await screen.findByText('GARO')).toBeOnTheScreen();
+    expect(await screen.findByTestId('portfolio-list')).toBeOnTheScreen();
     expect(screen.getByLabelText('Valor total, $ 1.000.000,00')).toBeOnTheScreen();
     expect(screen.getByLabelText('Efectivo disponible, $ 999.972,88')).toBeOnTheScreen();
     expect(screen.getByText('1 acción')).toBeOnTheScreen();
-    expect(screen.getByText('$ 27,12')).toBeOnTheScreen();
     expect(
       screen.getByLabelText('GARO, 1 acción, valor $ 27,12, resultado $ 0,00 · 0,00%'),
     ).toBeOnTheScreen();
@@ -117,7 +116,7 @@ describe('PortfolioScreen', () => {
     await renderScreen();
 
     expect(await screen.findByText('10 acciones')).toBeOnTheScreen();
-    expect(screen.getByText('$ 271,20')).toBeOnTheScreen();
+    expect(screen.getByLabelText(/valor \$ 271,20, resultado/)).toBeOnTheScreen();
     expect(screen.getByText('+$ 21,20 · +8,48%')).toBeOnTheScreen();
   });
 
@@ -148,7 +147,7 @@ describe('PortfolioScreen', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Reintentar' }));
 
-    expect(await screen.findByText('GARO')).toBeOnTheScreen();
+    expect(await screen.findByTestId('portfolio-list')).toBeOnTheScreen();
     expect(callsTo('/portfolio')).toBe(2);
   });
 });
@@ -167,7 +166,7 @@ describe('PortfolioScreen: vender desde una posición', () => {
 describe('PortfolioScreen: indicador de actualización', () => {
   it('un refresco en segundo plano NO muestra el spinner de tirar para actualizar', async () => {
     await renderScreen();
-    await screen.findByText('GARO');
+    await screen.findByTestId('portfolio-list');
     const releases: (() => void)[] = [];
     fetchMock.mockImplementation(
       (url: string) =>
@@ -194,7 +193,7 @@ describe('PortfolioScreen: indicador de actualización', () => {
 
   it('al tirar para actualizar sí lo muestra y lo oculta al terminar', async () => {
     await renderScreen();
-    await screen.findByText('GARO');
+    await screen.findByTestId('portfolio-list');
     const releases: (() => void)[] = [];
     fetchMock.mockImplementation(
       (url: string) =>
@@ -231,7 +230,7 @@ describe('PortfolioScreen: respuesta real de X-Enable-Bugs: hard', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Reintentar' }));
 
-    expect(await screen.findByText('GARO')).toBeOnTheScreen();
+    expect(await screen.findByTestId('portfolio-list')).toBeOnTheScreen();
     expect(callsTo('/portfolio')).toBe(2);
   });
 });
@@ -250,7 +249,7 @@ describe('PortfolioScreen: orden alfabético', () => {
       },
     });
     await renderScreen();
-    await screen.findByText('GARO');
+    await screen.findByTestId('portfolio-list');
 
     const tickers = screen
       .getByTestId('portfolio-list')
@@ -261,14 +260,20 @@ describe('PortfolioScreen: orden alfabético', () => {
 });
 
 describe('PortfolioScreen: rendimiento de la cuenta', () => {
-  const rendimiento = (text: string) =>
-    `Rendimiento de la cuenta, ${text}, contra un capital inicial de $ 1.000.000,00`;
+  const rendimiento = (text: string) => `Rendimiento histórico de la cuenta, ${text}`;
 
   it('si el total coincide con el capital inicial, el rendimiento es 0', async () => {
     await renderScreen(); // efectivo 999.972,88 + GARO 27,12 = 1.000.000,00
 
     expect(await screen.findByLabelText(rendimiento('$ 0,00 · 0,00%'))).toBeOnTheScreen();
-    expect(screen.getByText('Capital inicial $ 1.000.000,00')).toBeOnTheScreen();
+    expect(screen.getByText('histórico')).toBeOnTheScreen();
+  });
+
+  it('no muestra la leyenda del capital inicial', async () => {
+    await renderScreen();
+    await screen.findByTestId('portfolio-list');
+
+    expect(screen.queryByText(/Capital inicial/)).not.toBeOnTheScreen();
   });
 
   it('una ganancia se muestra con signo y en verde', async () => {
@@ -303,8 +308,18 @@ describe('PortfolioScreen: rendimiento de la cuenta', () => {
   });
 });
 
-describe('PortfolioScreen: gráfico de capital invertido', () => {
-  it('mientras cargan los movimientos muestra un indicador y el portfolio ya se ve', async () => {
+describe('PortfolioScreen: evolución del valor de la cuenta', () => {
+  const chartLabel = /^Evolución del valor de la cuenta, estimada/;
+
+  it('tiene título y aclara que es una estimación', async () => {
+    await renderScreen();
+    await screen.findByTestId('portfolio-list');
+
+    expect(screen.getByRole('header', { name: 'Evolución de la cuenta' })).toBeOnTheScreen();
+    expect(screen.getByText('Valor estimado con los precios de tus órdenes.')).toBeOnTheScreen();
+  });
+
+  it('mientras cargan las órdenes muestra un indicador y el portfolio ya se ve', async () => {
     fetchMock.mockImplementation((url: string) =>
       String(url).includes('/orders')
         ? new Promise<Response>(() => undefined)
@@ -312,43 +327,60 @@ describe('PortfolioScreen: gráfico de capital invertido', () => {
     );
     await renderScreen();
 
-    expect(await screen.findByText('GARO')).toBeOnTheScreen();
+    expect(await screen.findByTestId('portfolio-list')).toBeOnTheScreen();
     expect(screen.getByLabelText('Cargando movimientos')).toBeOnTheScreen();
   });
 
-  it('con órdenes ejecutadas dibuja el gráfico y resume cuántos movimientos hubo y cuánto hay invertido', async () => {
+  it('con órdenes dibuja el gráfico: dice de qué valor a qué valor pasó y marca 5 referencias', async () => {
     serve({ body: real }, { body: [venta, compra] }); // la API las puede mandar en cualquier orden
     await renderScreen();
 
     expect(
-      await screen.findByLabelText('Gráfico del capital invertido, 2 movimientos, ahora $ 296,80'),
+      await screen.findByLabelText(
+        'Evolución del valor de la cuenta, estimada: pasó de $ 1.000.000,00 a $ 1.000.000,00',
+      ),
     ).toBeOnTheScreen();
-    expect(screen.getByText('31/10')).toBeOnTheScreen();
-    expect(screen.getByText('01/11')).toBeOnTheScreen();
+    // El eje se dibuja con el ancho, que llega recién con el layout.
+    await fireEvent(screen.getByTestId('value-chart'), 'layout', {
+      nativeEvent: { layout: { width: 300, height: 160 } },
+    });
+    // el valor máximo estimado fue 1.000.063,20 (después de vender 4 a 60) y el mínimo 1.000.000,00
+    expect(screen.getByTestId('value-tick-0')).toHaveTextContent('$ 1.000.063,20');
+    expect(screen.getByTestId('value-tick-4')).toHaveTextContent('$ 1.000.000,00');
+    expect(screen.getAllByTestId(/^value-tick-/)).toHaveLength(5);
   });
 
-  it('dibuja la línea en escalones: arranca en 0, sube con la compra y baja con la venta', async () => {
+  it('abajo muestra la fecha del primer y del último punto', async () => {
     serve({ body: real }, { body: [compra, venta] });
     await renderScreen();
-    await screen.findByLabelText(/^Gráfico del capital invertido/);
+    await screen.findByLabelText(chartLabel);
 
-    // El ancho llega recién con el layout.
-    await fireEvent(screen.getByTestId('invested-chart'), 'layout', {
-      nativeEvent: { layout: { width: 300, height: 120 } },
-    });
+    const days = screen.getAllByText(/^\d{2}\/\d{2}$/);
 
-    const d: string = screen.getByTestId('invested-line').props.d;
-    expect(d.startsWith('M 8 112 H 150 V 8 H 292 V ')).toBe(true);
-    expect(d).not.toMatch(/NaN|Infinity/);
+    expect(days).toHaveLength(2);
+    expect(days[0]).toHaveTextContent('31/10');
   });
 
-  it('con un solo movimiento lo dice en singular', async () => {
+  it('con un solo movimiento también dibuja el gráfico', async () => {
     serve({ body: real }, { body: [compra] });
     await renderScreen();
 
-    expect(
-      await screen.findByLabelText('Gráfico del capital invertido, 1 movimiento, ahora $ 536,80'),
-    ).toBeOnTheScreen();
+    expect(await screen.findByLabelText(chartLabel)).toBeOnTheScreen();
+  });
+
+  it('dibuja la línea en escalones dentro del espacio que deja el eje', async () => {
+    serve({ body: real }, { body: [compra, venta] });
+    await renderScreen();
+    await screen.findByLabelText(chartLabel);
+
+    // El ancho llega recién con el layout.
+    await fireEvent(screen.getByTestId('value-chart'), 'layout', {
+      nativeEvent: { layout: { width: 300, height: 160 } },
+    });
+
+    const d: string = screen.getByTestId('value-line').props.d;
+    expect(d).toMatch(/^M 8 [\d.]+ H /);
+    expect(d).not.toMatch(/NaN|Infinity/);
   });
 
   it('sin órdenes ejecutadas lo avisa en vez de dibujar un gráfico vacío', async () => {
@@ -358,24 +390,129 @@ describe('PortfolioScreen: gráfico de capital invertido', () => {
     expect(await screen.findByText('Todavía no hay movimientos.')).toBeOnTheScreen();
   });
 
-  it('si fallan los movimientos, el portfolio sigue funcionando y se puede reintentar', async () => {
+  it('si fallan las órdenes, el portfolio sigue funcionando y se puede reintentar', async () => {
     serve({ body: real }, { body: { error: 'Missing header' }, status: 400 });
     await renderScreen();
 
     expect(await screen.findByText('No pudimos cargar los movimientos.')).toBeOnTheScreen();
-    expect(screen.getByText('GARO')).toBeOnTheScreen();
+    expect(screen.getByLabelText(/^GARO, 1 acción/)).toBeOnTheScreen();
     expect(screen.getByLabelText(/^Valor total/)).toBeOnTheScreen();
 
     serve({ body: real }, { body: [compra] });
     await fireEvent.press(screen.getByRole('button', { name: 'Reintentar' }));
 
-    expect(await screen.findByLabelText(/^Gráfico del capital invertido/)).toBeOnTheScreen();
+    expect(await screen.findByLabelText(chartLabel)).toBeOnTheScreen();
+  });
+
+  it('si falta algún precio no inventa el último punto: el gráfico igual se arma con las órdenes', async () => {
+    serve({ body: sinPrecio }, { body: [compra] });
+    await renderScreen();
+
+    expect(await screen.findByLabelText(chartLabel)).toBeOnTheScreen();
   });
 
   it('usa el mismo caché que el historial: un solo pedido a /orders por pantalla', async () => {
     await renderScreen();
-    await screen.findByText('GARO');
+    await screen.findByTestId('portfolio-list');
 
     expect(callsTo('/orders')).toBe(1);
+  });
+});
+
+describe('PortfolioScreen: título de los instrumentos', () => {
+  it('encima de las posiciones dice "Tus instrumentos"', async () => {
+    await renderScreen();
+    await screen.findByTestId('portfolio-list');
+
+    expect(screen.getByRole('header', { name: 'Tus instrumentos' })).toBeOnTheScreen();
+  });
+
+  it('también está cuando todavía no hay posiciones', async () => {
+    serve({ body: { cash: 1000000, holdings: [] } });
+    await renderScreen();
+
+    expect(await screen.findByText('Todavía no tenés posiciones.')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Tus instrumentos' })).toBeOnTheScreen();
+  });
+});
+
+describe('PortfolioScreen: composición de la cartera', () => {
+  const tres = {
+    cash: 600,
+    holdings: [
+      {
+        ...garo,
+        instrument_id: 16,
+        ticker: 'GARO',
+        quantity: 10,
+        last_price: 10,
+        avg_cost_price: 10,
+      },
+      {
+        ...garo,
+        instrument_id: 2,
+        ticker: 'CAPX',
+        quantity: 10,
+        last_price: 30,
+        avg_cost_price: 30,
+      },
+    ],
+  };
+
+  it('tiene título y muestra cada posición y el efectivo con su porcentaje', async () => {
+    serve({ body: tres });
+    await renderScreen();
+
+    expect(
+      await screen.findByRole('header', { name: 'Composición de tu cartera' }),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByLabelText(
+        'Composición de la cartera: CAPX 30,00%, GARO 10,00%, Efectivo disponible 60,00%',
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId('legend-2')).toHaveTextContent(/CAPX/);
+    expect(screen.getByTestId('legend-2')).toHaveTextContent(/30,00%/);
+    expect(screen.getByTestId('legend-cash')).toHaveTextContent(/60,00%/);
+  });
+
+  it('cada porción de la leyenda lleva el color de su porción y el efectivo va en gris', async () => {
+    serve({ body: tres });
+    await renderScreen();
+    await screen.findByText('Composición de tu cartera');
+
+    expect(screen.getByTestId('legend-dot-2')).toHaveStyle({ backgroundColor: sliceColors[0] });
+    expect(screen.getByTestId('legend-dot-16')).toHaveStyle({ backgroundColor: sliceColors[1] });
+    expect(screen.getByTestId('legend-dot-cash')).toHaveStyle({ backgroundColor: cashSliceColor });
+  });
+
+  it('con solo efectivo muestra el 100% en una sola porción', async () => {
+    serve({ body: { cash: 1000000, holdings: [] } });
+    await renderScreen();
+
+    expect(
+      await screen.findByLabelText('Composición de la cartera: Efectivo disponible 100,00%'),
+    ).toBeOnTheScreen();
+  });
+
+  it('una posición chiquita igual figura en la leyenda con su porcentaje (aunque casi no se vea)', async () => {
+    await renderScreen(); // GARO vale 27,12 de 1.000.000
+
+    await screen.findByTestId('portfolio-list');
+
+    expect(screen.getByTestId('legend-16')).toHaveTextContent(/0,00%/);
+    expect(screen.getByTestId('legend-cash')).toHaveTextContent(/100,00%/);
+  });
+
+  it('si falta el precio de alguna posición no arma una torta incompleta y lo explica', async () => {
+    serve({ body: sinPrecio });
+    await renderScreen();
+
+    expect(
+      await screen.findByText(
+        'No se puede mostrar la composición: falta el precio de alguna posición.',
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.queryByTestId('legend-cash')).not.toBeOnTheScreen();
   });
 });

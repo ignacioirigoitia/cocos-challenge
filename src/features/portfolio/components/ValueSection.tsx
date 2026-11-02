@@ -1,4 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query';
+import type { Big } from 'big.js';
 import { useMemo } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
@@ -6,16 +7,25 @@ import type { HistoryOrder } from '@/features/orders/history/schema';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { useTheme } from '@/shared/ui/theme';
 
-import { investedSeries } from '../invested';
-import { InvestedChart } from './InvestedChart';
+import { INITIAL_CAPITAL, valueSeries } from '../valueSeries';
+import { ValueChart } from './ValueChart';
+
+interface Props {
+  orders: UseQueryResult<HistoryOrder[]>;
+  /** Total real de hoy (null si falta algún precio): es el último punto del gráfico. */
+  totalValue: Big | null;
+}
 
 /**
- * Capital invertido a lo largo de las órdenes ejecutadas. Es independiente del resto de la pantalla:
- * si las órdenes fallan o tardan, el portfolio se ve igual y esta sección avisa por su cuenta.
+ * Evolución del valor de la cuenta, armada con las órdenes. Es independiente del resto de la
+ * pantalla: si las órdenes fallan o tardan, el portfolio se ve igual y esta sección avisa por su cuenta.
  */
-export function MovementsSection({ orders }: { orders: UseQueryResult<HistoryOrder[]> }) {
+export function ValueSection({ orders, totalValue }: Props) {
   const { colors, spacing, fontSize } = useTheme();
-  const points = useMemo(() => investedSeries(orders.data ?? []), [orders.data]);
+  const points = useMemo(
+    () => valueSeries(orders.data ?? [], INITIAL_CAPITAL, totalValue, new Date()),
+    [orders.data, totalValue],
+  );
 
   return (
     <View style={{ padding: spacing.lg }}>
@@ -23,12 +33,12 @@ export function MovementsSection({ orders }: { orders: UseQueryResult<HistoryOrd
         accessibilityRole="header"
         style={{ color: colors.text, fontSize: fontSize.lg, fontWeight: '700' }}
       >
-        Capital invertido
+        Evolución de la cuenta
       </Text>
       <Text
         style={{ color: colors.textSecondary, fontSize: fontSize.sm, marginBottom: spacing.md }}
       >
-        Compras menos ventas ejecutadas. Cada escalón es una orden.
+        Valor estimado con los precios de tus órdenes.
       </Text>
 
       {orders.isPending ? (
@@ -44,7 +54,7 @@ export function MovementsSection({ orders }: { orders: UseQueryResult<HistoryOrd
           Todavía no hay movimientos.
         </Text>
       ) : (
-        <InvestedChart points={points} />
+        <ValueChart points={points} />
       )}
     </View>
   );

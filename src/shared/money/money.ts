@@ -105,6 +105,11 @@ export function formatPct(value: Big | null): string {
   return `${sign}${rounded.abs().toFixed(2).replace('.', ',')}%`;
 }
 
+/** "99,89%": porcentaje sin signo, para partes de un total (a diferencia de formatPct, que es de variaciones). */
+export function formatShare(value: Big): string {
+  return `${round2(value).toFixed(2).replace('.', ',')}%`;
+}
+
 const USER_NUMBER = /^\d+([.,]\d+)?$/;
 
 /**

@@ -6,6 +6,7 @@ import {
   calcReturnPct,
   formatARS,
   formatPct,
+  formatShare,
   formatQuantity,
   formatSignedARS,
   parseAmount,
@@ -241,5 +242,18 @@ describe('calcAccountReturn', () => {
 
   it('con capital inicial 0 no divide: null', () => {
     expect(calcAccountReturn(new Big('10'), new Big('0'))).toBeNull();
+  });
+});
+
+describe('formatShare', () => {
+  it('porcentaje sin signo y con coma decimal', () => {
+    expect(formatShare(new Big('99.8869'))).toBe('99,89%');
+    expect(formatShare(new Big('0.05'))).toBe('0,05%');
+    expect(formatShare(new Big('100'))).toBe('100,00%');
+  });
+
+  it('redondea al segundo decimal y lo muy chico queda en 0,00%', () => {
+    expect(formatShare(new Big('0.004'))).toBe('0,00%');
+    expect(formatShare(new Big('33.335'))).toBe('33,34%');
   });
 });
