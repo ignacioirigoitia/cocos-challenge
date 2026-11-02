@@ -99,3 +99,48 @@ describe('cuenta propia por instalación', () => {
     expect(result.id).toBe('ya-guardado');
   });
 });
+
+describe('cuenta creada de forma explícita', () => {
+  it('una instalación nueva no tiene cuenta hasta que el usuario la crea', () => {
+    expect(useSettings.getState().accountCreated).toBe(false);
+  });
+
+  it('createAccount la marca como creada', () => {
+    useSettings.getState().createAccount();
+
+    expect(useSettings.getState().accountCreated).toBe(true);
+  });
+
+  it('en el primer arranque queda guardado que todavía no hay cuenta', async () => {
+    const first = await launch(null);
+
+    expect(JSON.parse(first.saved ?? '{}').state.accountCreated).toBe(false);
+  });
+
+  it('crear la cuenta se guarda: en el arranque siguiente ya no pide la bienvenida', async () => {
+    jest.resetModules();
+    jest.doMock('@/shared/config/env', () => ({ ENV_CANDIDATE_ID: undefined }));
+    const { useSettings: store } = require('./settings');
+    await store.persist.rehydrate();
+    store.getState().createAccount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const storageModule = require('@react-native-async-storage/async-storage');
+    const saved = await (storageModule.default ?? storageModule).getItem('settings');
+
+    const second = await launch(saved);
+
+    expect(JSON.parse(second.saved ?? '{}').state.accountCreated).toBe(true);
+  });
+
+  it('quien ya tenía un id guardado (versión anterior, sin este dato) conserva su cuenta: no vuelve a la bienvenida', async () => {
+    const before = JSON.stringify({
+      state: { bugMode: 'off', candidateId: 'ya-guardado', theme: 'system' },
+      version: 0,
+    });
+
+    const result = await launch(before);
+
+    expect(JSON.parse(result.saved ?? '{}').state.accountCreated).toBe(true);
+    expect(result.id).toBe('ya-guardado');
+  });
+});

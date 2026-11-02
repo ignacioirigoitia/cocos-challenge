@@ -15,7 +15,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       }
     },
-    "plugins": ["expo-router", "expo-asset"],
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      [
+        "expo-local-authentication",
+        { "faceIDPermission": "Usamos Face ID para confirmar que sos vos al abrir la app." }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     }
