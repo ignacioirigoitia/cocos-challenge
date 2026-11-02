@@ -57,6 +57,23 @@ describe('useSearchInstruments', () => {
     expect(result.current.data?.[0].lastPrice?.toString()).toBe('45.72');
   });
 
+  it('no devuelve la moneda ARS aunque la API la encuentre (con off, "ars" la devuelve)', async () => {
+    const ars = {
+      id: 26,
+      ticker: 'ARS',
+      name: 'Pesos',
+      type: 'MONEDA',
+      last_price: 1,
+      close_price: 1,
+    };
+    fetchMock.mockResolvedValue(fakeResponse([ars]));
+
+    const { result } = await renderHook(() => useSearchInstruments('ars'), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual([]);
+  });
+
   it('ignora los espacios de los costados', async () => {
     await renderHook(() => useSearchInstruments('  DY '), { wrapper });
 

@@ -12,8 +12,9 @@ const withBugs = { easy, medium, hard };
 describe('/instruments con X-Enable-Bugs: off (camino feliz)', () => {
   const instruments = InstrumentsResponseSchema.parse(off);
 
-  it('trae los 26 instrumentos, todos con precio y operables', () => {
-    expect(instruments).toHaveLength(26);
+  it('trae los 25 instrumentos (sin la moneda ARS), todos con precio y operables', () => {
+    expect(instruments).toHaveLength(25);
+    expect(instruments.some((i) => i.ticker === 'ARS')).toBe(false);
     expect(instruments.every((i) => i.tradable && i.lastPrice && i.returnPct)).toBe(true);
   });
 });
@@ -23,7 +24,7 @@ describe.each(Object.entries(withBugs))('/instruments con X-Enable-Bugs: %s', (_
   const reference = InstrumentsResponseSchema.parse(off);
 
   it('la respuesta sigue siendo válida: los defectos no rompen el esquema', () => {
-    expect(instruments).toHaveLength(26);
+    expect(instruments).toHaveLength(25);
   });
 
   it('MIRG llega con last_price 0 y queda sin precio, sin retorno y no operable', () => {

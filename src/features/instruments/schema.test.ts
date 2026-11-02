@@ -37,12 +37,16 @@ describe('InstrumentsResponseSchema', () => {
     expect(i.tradable).toBe(false);
   });
 
-  it('ARS es un instrumento más: operable, con retorno 0', () => {
-    const [i] = InstrumentsResponseSchema.parse([ars]);
+  it('deja afuera las monedas (ARS): los pesos son el efectivo de la cuenta, no algo que se opere', () => {
+    const list = InstrumentsResponseSchema.parse([dyca, ars, mirgConBug]);
 
-    expect(i.type).toBe('MONEDA');
-    expect(i.tradable).toBe(true);
-    expect(i.returnPct?.toString()).toBe('0');
+    expect(list.map((i) => i.ticker)).toEqual(['DYCA', 'MIRG']);
+  });
+
+  it('solo saca lo que se sabe que no se opera (MONEDA): un tipo nuevo no se esconde', () => {
+    const [i] = InstrumentsResponseSchema.parse([{ ...dyca, type: 'BONOS' }]);
+
+    expect(i.type).toBe('BONOS');
   });
 
   it.each([null, 'abc', -5, undefined])('precio inválido (%p) se trata como sin dato', (price) => {

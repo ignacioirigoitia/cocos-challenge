@@ -7,10 +7,10 @@ import { SEARCH_DEBOUNCE_MS, useSearchInstruments } from '@/features/search/useS
 import { errorMessage } from '@/shared/api/errorMessage';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { ErrorState } from '@/shared/ui/ErrorState';
-import { type SegmentOption, SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { useTheme } from '@/shared/ui/theme';
 
 import { InstrumentRow } from '../components/InstrumentRow';
+import { SortChips } from '../components/SortChips';
 import type { Instrument } from '../schema';
 import { type SortMode, sortInstruments } from '../sort';
 import { useInstruments } from '../useInstruments';
@@ -35,15 +35,10 @@ export function InstrumentsScreen({ onSelect }: Props) {
   const showingSearch = isSearching && !search.isPending;
   const { data, isPending, isError, error, refetch } = showingSearch ? search : list;
 
-  // A–Z por defecto; también se puede ver quién subió o bajó más en el día. El orden se aplica a
-  // lo que se esté viendo: la lista completa o los resultados de la búsqueda.
+  // A–Z por defecto; con un filtro rápido se ve quién subió o bajó más en el día. Se aplica a lo
+  // que se esté viendo: la lista completa o los resultados de la búsqueda.
   const [sortMode, setSortMode] = useState<SortMode>('alphabetical');
   const sorted = useMemo(() => sortInstruments(data ?? [], sortMode), [data, sortMode]);
-  const sortOptions: SegmentOption<SortMode>[] = [
-    { value: 'alphabetical', label: 'A–Z' },
-    { value: 'gainers', label: 'Mayores subas', activeColor: colors.positive },
-    { value: 'losers', label: 'Mayores bajas', activeColor: colors.negative },
-  ];
 
   // El spinner de "tirar para actualizar" es solo del gesto del usuario: si la lista se actualiza
   // por detrás (ej. al revisar una orden) no debe aparecer.
@@ -84,14 +79,7 @@ export function InstrumentsScreen({ onSelect }: Props) {
 
       <SearchBar value={text} onChangeText={setText} />
 
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
-        <SegmentedControl
-          label="Ordenar por"
-          options={sortOptions}
-          value={sortMode}
-          onChange={setSortMode}
-        />
-      </View>
+      <SortChips value={sortMode} onChange={setSortMode} />
 
       {isPending ? (
         <View style={styles.center}>

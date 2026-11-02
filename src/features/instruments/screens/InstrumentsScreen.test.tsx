@@ -37,6 +37,7 @@ const instruments = [
   },
   { id: 5, ticker: 'MIRG', name: 'Mirgor', type: 'ACCIONES', last_price: 0, close_price: 37.74 },
   { id: 26, ticker: 'ARS', name: 'Pesos', type: 'MONEDA', last_price: 1, close_price: 1 },
+  { id: 27, ticker: 'BYMA', name: 'Byma', type: 'ACCIONES', last_price: 10, close_price: 10 },
 ];
 
 let client: ReturnType<typeof createQueryClient>;
@@ -89,11 +90,18 @@ describe('InstrumentsScreen', () => {
     expect(screen.queryByText('-100,00%')).not.toBeOnTheScreen();
   });
 
-  it('ARS aparece como un instrumento más, con retorno 0', async () => {
+  it('no muestra la moneda ARS: los pesos son el efectivo, no algo que se opere', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    expect(screen.queryByText('ARS')).not.toBeOnTheScreen();
+    expect(screen.queryByText('Pesos')).not.toBeOnTheScreen();
+  });
+
+  it('una acción que no varió se muestra con retorno 0', async () => {
     await renderScreen();
 
-    expect(await screen.findByText('ARS')).toBeOnTheScreen();
-    expect(screen.getByText('$ 1,00')).toBeOnTheScreen();
+    expect(await screen.findByText('BYMA')).toBeOnTheScreen();
     expect(screen.getByText('0,00%')).toBeOnTheScreen();
   });
 
@@ -126,21 +134,29 @@ describe('InstrumentsScreen', () => {
 });
 
 describe('InstrumentsScreen: ordenar por variación del día', () => {
-  // La lista de prueba: DYCA baja (-8,69%), CAPX sube (+7,99%), MIRG no tiene precio y ARS no varió.
+  // La lista de prueba: DYCA baja (-8,69%), CAPX sube (+7,99%), MIRG no tiene precio y BYMA no varió.
   const tickersShown = () =>
     screen.getByTestId('instruments-list').props.data.map((i: { ticker: string }) => i.ticker);
-  const choose = (name: string) => fireEvent.press(screen.getByRole('radio', { name }));
+  const choose = (name: string) => fireEvent.press(screen.getByRole('button', { name }));
 
-  it('ofrece tres formas de ordenar y arranca en A–Z', async () => {
+  it('ofrece dos filtros rápidos y arranca sin ninguno activo, en orden A–Z', async () => {
     await renderScreen();
     await screen.findByText('DYCA');
 
-    // El grupo no es "accesible" a propósito (si lo fuera, el lector no leería cada opción).
-    expect(screen.getByLabelText('Ordenar por').props.accessibilityRole).toBe('radiogroup');
-    expect(screen.getByRole('radio', { name: 'A–Z' })).toBeSelected();
-    expect(screen.getByRole('radio', { name: 'Mayores subas' })).toBeOnTheScreen();
-    expect(screen.getByRole('radio', { name: 'Mayores bajas' })).toBeOnTheScreen();
-    expect(tickersShown()).toEqual(['ARS', 'CAPX', 'DYCA', 'MIRG']);
+    expect(screen.getByRole('button', { name: 'Mayores subas' })).not.toBeSelected();
+    expect(screen.getByRole('button', { name: 'Mayores bajas' })).not.toBeSelected();
+    expect(screen.queryByRole('button', { name: 'A–Z' })).not.toBeOnTheScreen();
+    expect(tickersShown()).toEqual(['BYMA', 'CAPX', 'DYCA', 'MIRG']);
+  });
+
+  it('el filtro activo se anuncia como seleccionado', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+
+    await choose('Mayores subas');
+
+    expect(screen.getByRole('button', { name: 'Mayores subas' })).toBeSelected();
+    expect(screen.getByRole('button', { name: 'Mayores bajas' })).not.toBeSelected();
   });
 
   it('"Mayores subas" muestra solo los que subieron', async () => {
@@ -149,7 +165,7 @@ describe('InstrumentsScreen: ordenar por variación del día', () => {
 
     await choose('Mayores subas');
 
-    expect(tickersShown()).toEqual(['CAPX']); // no entran DYCA (bajó), ARS (0%) ni MIRG (sin precio)
+    expect(tickersShown()).toEqual(['CAPX']); // no entran DYCA (bajó), BYMA (0%) ni MIRG (sin precio)
   });
 
   it('"Mayores bajas" muestra solo los que bajaron', async () => {
@@ -161,14 +177,27 @@ describe('InstrumentsScreen: ordenar por variación del día', () => {
     expect(tickersShown()).toEqual(['DYCA']);
   });
 
-  it('volver a A–Z muestra todos de nuevo', async () => {
+  it('tocar de nuevo el filtro activo lo apaga y vuelve a mostrar todos en A–Z', async () => {
     await renderScreen();
     await screen.findByText('DYCA');
     await choose('Mayores bajas');
 
-    await choose('A–Z');
+    await choose('Mayores bajas');
 
-    expect(tickersShown()).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'Mayores bajas' })).not.toBeSelected();
+    expect(tickersShown()).toEqual(['BYMA', 'CAPX', 'DYCA', 'MIRG']);
+  });
+
+  it('elegir el otro filtro reemplaza al anterior: nunca hay dos activos', async () => {
+    await renderScreen();
+    await screen.findByText('DYCA');
+    await choose('Mayores subas');
+
+    await choose('Mayores bajas');
+
+    expect(screen.getByRole('button', { name: 'Mayores subas' })).not.toBeSelected();
+    expect(screen.getByRole('button', { name: 'Mayores bajas' })).toBeSelected();
+    expect(tickersShown()).toEqual(['DYCA']);
   });
 
   it('si ninguno bajó, lo dice en vez de mostrar una lista vacía', async () => {
@@ -196,12 +225,12 @@ describe('InstrumentsScreen: ordenar por variación del día', () => {
     await screen.findByText('DYCA');
 
     await choose('Mayores subas');
-    expect(screen.getByRole('radio', { name: 'Mayores subas' })).toHaveStyle({
+    expect(screen.getByRole('button', { name: 'Mayores subas' })).toHaveStyle({
       backgroundColor: palettes.light.positive,
     });
 
     await choose('Mayores bajas');
-    expect(screen.getByRole('radio', { name: 'Mayores bajas' })).toHaveStyle({
+    expect(screen.getByRole('button', { name: 'Mayores bajas' })).toHaveStyle({
       backgroundColor: palettes.light.negative,
     });
   });
@@ -256,10 +285,10 @@ describe('InstrumentsScreen: orden alfabético', () => {
     screen.getByTestId('instruments-list').props.data.map((i: { ticker: string }) => i.ticker);
 
   it('la lista se muestra ordenada alfabéticamente por ticker, venga como venga de la API', async () => {
-    await renderScreen(); // la API los manda como DYCA, CAPX, MIRG, ARS
+    await renderScreen(); // la API los manda como DYCA, CAPX, MIRG, ARS, BYMA
     await screen.findByText('DYCA');
 
-    expect(tickersShown()).toEqual(['ARS', 'CAPX', 'DYCA', 'MIRG']);
+    expect(tickersShown()).toEqual(['BYMA', 'CAPX', 'DYCA', 'MIRG']);
   });
 
   it('los resultados de la búsqueda también van ordenados alfabéticamente', async () => {

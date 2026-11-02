@@ -31,7 +31,7 @@ Un id que ya quedó guardado en el dispositivo no se pisa con la variable.
 
 ## Qué hace
 
-- **Mercado:** lista de instrumentos con último precio y retorno del día (último precio contra cierre), buscador por ticker y orden por A–Z, mayores subas o mayores bajas.
+- **Mercado:** lista de instrumentos con último precio y retorno del día (último precio contra cierre), buscador por ticker y dos filtros rápidos (mayores subas y mayores bajas; sin ninguno activo va en orden alfabético). No incluye la moneda ARS: los pesos son el efectivo de la cuenta y no se operan.
 - **Portfolio:** efectivo disponible, valor total, y por cada posición cantidad, valor de mercado, ganancia en pesos y rendimiento en porcentaje.
 - **Órdenes:** compra y venta, a mercado o límite, indicando cantidad de acciones o monto en pesos. El flujo es formulario, revisión y resultado. En la revisión se vuelven a pedir precio, efectivo y tenencias para confirmar con datos frescos. También hay un historial de órdenes.
 - **Ajustes:** tema claro, oscuro o del sistema, y la cuenta de esta instalación. Solo en desarrollo aparece el selector del modo de bugs de la API (`X-Enable-Bugs`: off, easy, medium, hard).

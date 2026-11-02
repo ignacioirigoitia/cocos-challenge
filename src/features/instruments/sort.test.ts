@@ -11,10 +11,10 @@ const tickers = (items: { ticker: string }[]) => items.map((i) => i.ticker);
 describe('sortInstruments: alfabético', () => {
   it('ordena por ticker', () => {
     expect(tickers(sortInstruments(real, 'alphabetical')).slice(0, 4)).toEqual([
-      'ARS',
       'BBAR',
       'BPAT',
       'CAPX',
+      'CECO2',
     ]);
   });
 

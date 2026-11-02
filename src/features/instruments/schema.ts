@@ -25,6 +25,11 @@ const InstrumentSchema = z
     };
   });
 
-export const InstrumentsResponseSchema = z.array(InstrumentSchema);
+// Las monedas (ARS) no se operan: los pesos son el efectivo de la cuenta. Se sacan al entrar la
+// respuesta, así lo cubre todo a la vez (Mercado, búsqueda e historial). Se filtra lo que se sabe
+// que no se opera y no una lista de lo permitido, para no esconder un tipo nuevo sin querer.
+export const InstrumentsResponseSchema = z
+  .array(InstrumentSchema)
+  .transform((list) => list.filter((i) => i.type !== 'MONEDA'));
 
 export type Instrument = z.output<typeof InstrumentSchema>;

@@ -33,7 +33,7 @@ Lo que evalúan es **cómo piensa Ignacio**: las decisiones que toma y el camino
 - **HTTP:** `fetch` con wrapper fino en `shared/api` (headers, timeout, Zod). Errores tipados: sin conexión, timeout, HTTP, datos inválidos, rate limit (429, respeta `Retry-After`).
 - **Reintentos:** lecturas 2 veces con espera creciente (solo red/5xx). **Nunca** reintentar automáticamente el POST de una orden. `REJECTED` es un resultado de negocio, no un error.
 - **Rate limit:** tratar la API como externa: debounce en búsqueda con cancelación, `staleTime`, sin refetch agresivo, botón de envío deshabilitado en vuelo, polling lento de `PENDING`.
-- **Orden en listas:** Mercado y Portfolio van alfabéticos por ticker (`shared/sort/byTicker.ts`). Mercado permite ordenar por A–Z, mayores subas o mayores bajas (variación del día, no volatilidad).
+- **Orden en listas:** Mercado y Portfolio van alfabéticos por ticker (`shared/sort/byTicker.ts`). Mercado tiene dos chips de filtro, mayores subas y mayores bajas (variación del día, no volatilidad); tocar el activo lo apaga y vuelve a A–Z. Los instrumentos `type: MONEDA` (ARS) se sacan al entrar la respuesta (`InstrumentsResponseSchema`): los pesos son el efectivo, no se operan.
 - **Selector de modo de bugs:** en Ajustes, oculto en producción.
 - **Extras:** CI con GitHub Actions, historial de órdenes, tests del formulario (React Native Testing Library), accesibilidad básica. Descartados: biometría, EAS.
 - Notas de la API observada: `docs/api-notes.md` (no es parte del enunciado).
