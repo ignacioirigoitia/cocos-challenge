@@ -130,7 +130,15 @@ Por eso cada instalación genera su propio id la primera vez que se abre la app 
 
 La API no garantiza ningún orden en los listados, y ya había comprobado que en las órdenes cambia según el modo. Si dejaba el orden tal como viene, dos pantallas con los mismos datos podían mostrarse distinto de una recarga a otra. Por eso Mercado y Portfolio van siempre en orden alfabético por ticker, con una sola función compartida. Elegí alfabético porque es el orden más fácil de predecir para quien busca un instrumento.
 
-En Mercado agregué además un selector "Ordenar por": A–Z, mayores subas y mayores bajas. Lo que ordeno es la variación del día (último precio contra el cierre), que es el dato que ya calculaba. En subas solo entran los que subieron y en bajas solo los que bajaron. Los que no tienen precio (el "--") o no variaron quedan afuera en vez de mezclarse con un valor inventado.
+En Mercado agregué además dos filtros rápidos: mayores subas y mayores bajas. Lo que ordeno es la variación del día (último precio contra el cierre), que es el dato que ya calculaba. En subas solo entran los que subieron y en bajas solo los que bajaron. Los que no tienen precio (el "--") o no variaron quedan afuera en vez de mezclarse con un valor inventado.
+
+Al principio eran tres botones en fila, con A–Z incluido, y no me gustó cómo quedaba: A–Z no es un filtro sino el estado normal de la lista, y poner los tres al mismo nivel hacía que parecieran lo mismo. Lo cambié por dos chips, "Mayores subas" y "Mayores bajas". Sin ninguno activo la lista va de la A a la Z, y si toco el que está activo se apaga y vuelve a ese orden. Es un solo valor, así que nunca pueden estar los dos activos a la vez, y lo dejé cubierto con un test. Descarté un único botón "Ordenar" con un menú porque suma un toque más para algo que se usa seguido, y descarté ordenar tocando el encabezado de una columna porque en una lista de una sola columna no tiene sentido.
+
+### La moneda ARS no es un instrumento
+
+La API devuelve ARS ("Pesos") dentro de /instruments con type MONEDA, y yo lo estaba mostrando en Mercado como si fuera una acción, con retorno 0 % y con el botón para comprar o vender pesos. Me pareció raro y revisando vi que tenía razón: los pesos son el efectivo de la cuenta, que ya muestro aparte en Portfolio, y no tiene sentido operarlos. El campo type lo estaba validando pero no lo usaba en ningún lado.
+
+Decidí sacarlo de la lista y de la búsqueda. El filtro lo hago una sola vez, cuando entra la respuesta, así lo cubre todo a la vez en vez de acordarme de filtrar en cada pantalla. Saco solo lo que sé que no se opera (MONEDA) y no armo una lista de tipos permitidos: si la API agrega un tipo nuevo, como bonos, prefiero que aparezca y verlo antes que esconderlo sin querer. Descarté mostrarlo en una sección aparte o sin poder tocarlo, porque es interfaz para algo que no se puede usar, y descarté dejarlo y solo bloquear la orden, porque seguiría pareciendo un error en la lista. Lo dejé con tests, y para comprobar que sirven saqué el filtro a propósito y vi cómo fallaban 12. Es una interpretación mía del enunciado, que habla de un "listado de instrumentos", y por eso lo dejo escrito.
 
 ### Qué se entrega y cómo
 
