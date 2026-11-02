@@ -15,3 +15,5 @@ coverage/
 
 expo-env.d.ts
 # @end expo-cli
+# Documentos de trabajo (no se entregan)
+docs/

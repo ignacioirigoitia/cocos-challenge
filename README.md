@@ -2,7 +2,7 @@
 
 App móvil para ver el mercado, armar un portfolio y operar (comprar y vender) contra la API del challenge. Está hecha con React Native, TypeScript y Expo, y la corrí en el simulador de iPhone con Expo Go.
 
-Las decisiones, con sus alternativas descartadas, están en [DECISIONS.md](DECISIONS.md). El enunciado está en [docs/challenge.md](docs/challenge.md) y lo que fui observando de la API en [docs/api-notes.md](docs/api-notes.md).
+Las decisiones, con sus alternativas descartadas, están en [DECISIONS.md](DECISIONS.md). El enunciado del challenge está [acá](https://github.com/cocos-capital/cocos-challenge/blob/main/react-native-challenge.md).
 
 ## Cómo correrla
 
@@ -62,7 +62,7 @@ El detalle y las alternativas que descarté están en [DECISIONS.md](DECISIONS.m
 
 ## Cosas de la API que encontré y cómo las resuelvo
 
-Más detalle y fixtures reales en [docs/api-notes.md](docs/api-notes.md).
+Las respuestas reales que fui guardando están como fixtures en la carpeta `__fixtures__` de cada feature.
 
 - **Precio en 0:** hay un instrumento (MIRG) que con los modos con bugs llega con `last_price: 0`. Muestro "--", no calculo retorno y bloqueo operarlo, pero sigue en la lista. Si falta el precio de alguna posición, el total del portfolio también es "--".
 - **Portfolio inconsistente en `hard`:** a veces una posición llega sin `ticker`, y alguna vez apareció una acción de más. Sin ticker muestro un error con reintento y no invento el nombre. El `avg_cost_price` de `hard` además no coincide con el de los otros modos.
@@ -90,7 +90,6 @@ src/
     store/              Zustand (ajustes persistidos)
     ui/                 tema, componentes comunes, hoja inferior
     sort/ format/ hooks/ config/
-docs/                   enunciado, notas de la API y plan de trabajo
 ```
 
 El alias `@/` apunta a `src/`.

@@ -109,7 +109,7 @@ También comparo la orden que devuelve la API con la que envié (instrumento, la
 
 En hard, a veces una posición del portfolio llega sin el campo ticker. Decidí no inventarle un nombre ni mostrarla a medias: la pantalla avisa que hubo un error y ofrece reintentar, y como el defecto es intermitente, normalmente el reintento trae los datos bien. Descarté recuperar el ticker de otro lado o mostrar algo como "Instrumento #16", porque prefiero no mostrar datos que no sé si son correctos.
 
-Una vez un portfolio de hard apareció con una acción de más, como si no contara una venta ya ejecutada. Y a veces hard tarda unos 3 segundos en responder. Lo de la latencia lo tolera el timeout de 10 segundos, y para el error de un POST que tarda más ya tengo el aviso de revisar el portfolio. Las otras dos no las puedo detectar con validaciones de formato: solo se verían recalculando las posiciones desde el historial de órdenes, y eso es mucha complejidad para un defecto de un solo nivel. Las dejé documentadas en docs/api-notes.md como limitaciones conocidas de la API, y las voy a pasar al README.
+Una vez un portfolio de hard apareció con una acción de más, como si no contara una venta ya ejecutada. Y a veces hard tarda unos 3 segundos en responder. Lo de la latencia lo tolera el timeout de 10 segundos, y para el error de un POST que tarda más ya tengo el aviso de revisar el portfolio. Las otras dos no las puedo detectar con validaciones de formato: solo se verían recalculando las posiciones desde el historial de órdenes, y eso es mucha complejidad para un defecto de un solo nivel. Las dejé documentadas como limitaciones conocidas de la API en el README.
 
 
 ## Etapa 5. Producción
