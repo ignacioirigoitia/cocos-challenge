@@ -1,6 +1,6 @@
 # Challenge Cocos Capital
 
-App móvil para ver el mercado, armar un portfolio y operar (comprar y vender) contra la API del challenge. Está hecha con React Native, TypeScript y Expo, y la corrí en el simulador de iPhone con Expo Go.
+App móvil para ver el mercado, armar un portfolio y operar contra la API del challenge. Está hecha con React Native, TypeScript y Expo, y la corrí en el simulador de iPhone con Expo Go.
 
 Las decisiones, con sus alternativas descartadas, están en [DECISIONS.md](DECISIONS.md). El enunciado del challenge está [acá](https://github.com/cocos-capital/cocos-challenge/blob/main/react-native-challenge.md).
 
@@ -17,9 +17,27 @@ Se abre Expo en la terminal: escaneá el QR con Expo Go, o apretá `i` (simulado
 
 No necesita configurar nada más. La URL de la API y los headers ya están resueltos en `src/shared/api`.
 
+### Primer uso: cuenta y biometría
+
+La primera vez que se abre la app aparece una pantalla de bienvenida que explica que esta app de finanzas permite **una sola cuenta por dispositivo**, y la cuenta se crea recién cuando se toca "Crear mi cuenta". Hasta ese momento la app no muestra sus pantallas ni le pide nada a la API.
+
+En las aperturas siguientes, si el dispositivo tiene Face ID o huella **configurados**, se piden antes de entrar. Si no los tiene, la app entra directo.
+
+Esto último es a propósito. Face ID [no está soportado en Expo Go de iOS](https://docs.expo.dev/versions/latest/sdk/local-authentication.md): hace falta una *development build*. Si la biometría fuera obligatoria, la forma más común de probar el proyecto (`npm start` y Expo Go en un iPhone) no podría pasar de esa pantalla. Por eso, en Expo Go de iOS, en un simulador sin Face ID habilitado o en un dispositivo sin biometría, la app entra sin pedirla.
+
+Para ver el candado en el simulador de iPhone hace falta una development build (requiere Xcode) y habilitar Face ID en el simulador:
+
+```bash
+npx expo run:ios
+```
+
+Y en el simulador, *Features → Face ID → Enrolled*; después, *Features → Face ID → Matching Face* (coincide) o *Non-matching Face* (falla) cuando la app lo pida.
+
+Es un candado de la interfaz, no una seguridad del lado del servidor: la API no autentica, `X-Candidate-Id` es solo una etiqueta de la cuenta.
+
 ### Mi cuenta de pruebas
 
-La API aísla el estado (efectivo, tenencias y órdenes) por el header `X-Candidate-Id`. Para que quien la pruebe no arranque con mis órdenes de prueba, cada instalación genera su **propio id** la primera vez que abre la app (`candidate-` + 12 caracteres) y lo guarda. Se ve en Ajustes, en la sección Cuenta, y se puede copiar.
+La API aísla el estado (efectivo, tenencias y órdenes) por el header `X-Candidate-Id`. Para que quien la pruebe no arranque con mis órdenes de prueba, cada instalación genera su **propio id** cuando se crea la cuenta (`candidate-` + 12 caracteres) y lo guarda. Se ve en Ajustes, en la sección Cuenta, y se puede copiar.
 
 Si se quiere fijar un id a mano, se puede con una variable de entorno antes de arrancar:
 
@@ -58,6 +76,7 @@ El detalle y las alternativas que descarté están en [DECISIONS.md](DECISIONS.m
 - **`fetch` con un wrapper fino** y errores tipados: sin conexión, timeout, HTTP, datos inválidos, límite de pedidos y bloqueo.
 - **Las lecturas se reintentan, la orden nunca.** Reintentar un POST podría ejecutar la orden dos veces. Si el resultado de una orden queda dudoso, lo digo y mando a revisar el historial.
 - **Trato a la API como un servicio externo que limita:** debounce en la búsqueda, caché de React Query, sin refetch agresivo y botón de envío deshabilitado mientras se manda.
+- **Una cuenta por dispositivo, creada a propósito, y biometría solo si el dispositivo la tiene.** El enunciado pide una app lista para producción y me daba cosa que apenas abrieras la app ya tuvieras una cuenta creada sin que nadie te avisara. Pensé en una biometría obligatoria, pero en Expo Go de iOS no funciona y habría roto lo de "ejecutable localmente". Elegí una pantalla de bienvenida explícita y un candado biométrico que se pide solo cuando el dispositivo puede.
 - **Estilos propios** con `StyleSheet`, tokens y un hook `useTheme`, con una dirección visual minimalista tipo Robinhood. Contraste AA verificado con un test.
 
 ## Cosas de la API que encontré y cómo las resuelvo
@@ -97,8 +116,8 @@ El alias `@/` apunta a `src/`.
 
 ## Stack
 
-React Native, TypeScript, Expo (SDK 58), Expo Router, React Query, Zustand, react-hook-form, Zod, big.js, react-native-svg (los gráficos), Jest y React Native Testing Library. Gestor de paquetes: npm.
+React Native, TypeScript, Expo (SDK 58), Expo Router, React Query, Zustand, react-hook-form, Zod, big.js, react-native-svg (los gráficos), expo-local-authentication (la biometría), Jest y React Native Testing Library. Gestor de paquetes: npm.
 
 ## Qué no hice
 
-No agregué biometría ni builds con EAS: no los pide el enunciado y no me aportaban a lo que se evalúa.
+No agregué builds con EAS: no los pide el enunciado y no me aportaban a lo que se evalúa. El candado biométrico funciona solo cuando el dispositivo lo permite, así que no lo vi en acción con una development build, y la app no se vuelve a bloquear al volver desde segundo plano, solo al abrirla.
