@@ -19,10 +19,14 @@ export function OrderHistoryRow({ item }: { item: HistoryItem }) {
   const when = formatDateTime(item.createdAt);
 
   const sideColor = item.side === 'BUY' ? colors.positive : colors.negative;
+  // Cada estado con su color: ejecutada en verde, pendiente en ámbar, rechazada (o un estado
+  // inesperado) en rojo. El texto sigue diciendo el estado: el color no es lo único que lo indica.
   const statusColor =
-    item.status === 'REJECTED' || item.status === 'UNKNOWN'
-      ? colors.negative
-      : colors.textSecondary;
+    item.status === 'FILLED'
+      ? colors.positive
+      : item.status === 'PENDING'
+        ? colors.pending
+        : colors.negative;
 
   // Un solo texto para lectores de pantalla.
   const label = `${sideLabel} ${item.ticker ?? 'instrumento desconocido'}, ${formatQuantity(item.quantity)}, ${typeLabel}, ${statusLabel}, ${item.price ? price : 'sin precio'}, ${when}`;
@@ -49,7 +53,9 @@ export function OrderHistoryRow({ item }: { item: HistoryItem }) {
         <Text style={{ color: colors.text, fontSize: fontSize.lg, fontWeight: '600' }}>
           {price}
         </Text>
-        <Text style={{ color: statusColor, fontSize: fontSize.md, marginTop: 2 }}>
+        <Text
+          style={{ color: statusColor, fontSize: fontSize.md, fontWeight: '600', marginTop: 2 }}
+        >
           {statusLabel}
         </Text>
       </View>

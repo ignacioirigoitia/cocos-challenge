@@ -13,6 +13,7 @@ const TEXT_PAIRS = [
   ['textSecondary', 'surface', 'placeholder del buscador y opciones sin elegir'],
   ['positive', 'background', 'ganancias y "Compra"'],
   ['negative', 'background', 'pérdidas, "Venta" y errores'],
+  ['pending', 'background', 'estado "Pendiente" de una orden'],
   ['background', 'positive', 'etiqueta de "Comprar" elegido'],
   ['background', 'negative', 'etiqueta de "Vender" elegido'],
   ['background', 'text', 'botón principal y opciones elegidas'],

@@ -18,6 +18,8 @@ export const palettes = {
     inputBorder: '#868D98',
     positive: '#00875A',
     negative: '#D6333B',
+    // Ámbar: estado "Pendiente" de una orden (ni ganancia ni error).
+    pending: '#B45309',
   },
   dark: {
     background: '#000000',
@@ -28,6 +30,7 @@ export const palettes = {
     inputBorder: '#5B6370',
     positive: '#2DD48A',
     negative: '#FF6B6B',
+    pending: '#F5A524',
   },
 } as const;
 

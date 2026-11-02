@@ -377,7 +377,10 @@ describe('OrderScreen: resultado', () => {
     await screen.findByText('Revisá tu orden');
     await press('Confirmar y enviar');
 
-    expect(await screen.findByText('Orden pendiente')).toBeOnTheScreen();
+    // El título va en ámbar, el mismo color que el estado en el historial.
+    expect(await screen.findByText('Orden pendiente')).toHaveStyle({
+      color: palettes.light.pending,
+    });
     expect(
       screen.getByText(
         'Tu orden quedó en espera. Se ejecutará cuando el mercado alcance tu precio.',

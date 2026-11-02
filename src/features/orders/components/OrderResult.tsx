@@ -31,7 +31,9 @@ export function OrderResult({ order, estimated, expectedPrice, matchesRequest, o
       ? colors.positive
       : info.tone === 'error'
         ? colors.negative
-        : colors.text;
+        : info.tone === 'pending'
+          ? colors.pending
+          : colors.text;
 
   // Con los valores reales que devolvió la API (no con los estimados).
   const total = order.price ? estimatedCost(order.quantity, order.price) : null;

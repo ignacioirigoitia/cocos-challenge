@@ -5,6 +5,7 @@ import instrumentsOff from '@/features/instruments/__fixtures__/instruments.off.
 import { createQueryClient } from '@/shared/api/queryClient';
 import { formatDateTime } from '@/shared/format/date';
 import { useSettings } from '@/shared/store/settings';
+import { palettes } from '@/shared/ui/theme';
 
 import { OrdersScreen } from './OrdersScreen';
 
@@ -242,5 +243,44 @@ describe('OrdersScreen: indicador de actualización', () => {
 
     pending.release();
     await waitFor(() => expect(refreshing()).toBe(false));
+  });
+});
+
+describe('OrdersScreen: color del estado de cada orden', () => {
+  it.each(['light', 'dark'] as const)(
+    'ejecutada en verde, pendiente en ámbar y rechazada en rojo (tema %s)',
+    async (scheme) => {
+      useSettings.setState({ theme: scheme });
+      await renderScreen();
+      await screen.findByText('Compra CAPX');
+      const colors = palettes[scheme];
+
+      for (const done of screen.getAllByText('Ejecutada')) {
+        expect(done).toHaveStyle({ color: colors.positive });
+      }
+      expect(screen.getByText('Pendiente')).toHaveStyle({ color: colors.pending });
+      expect(screen.getByText('Rechazada')).toHaveStyle({ color: colors.negative });
+    },
+  );
+
+  it('los tres se distinguen entre sí (no solo por el texto)', async () => {
+    await renderScreen();
+    await screen.findByText('Compra CAPX');
+
+    const used = ['Ejecutada', 'Pendiente', 'Rechazada'].map(
+      (label) => screen.getAllByText(label)[0].props.style.color ?? '',
+    );
+
+    expect(new Set(used).size).toBe(3);
+  });
+
+  it('un estado inesperado (a mercado en espera) sigue en rojo y no se confunde con una pendiente', async () => {
+    ordersBody = [order({ id: 9, type: 'MARKET', status: 'PENDING' })];
+    await renderScreen();
+
+    expect(await screen.findByText('Estado inesperado')).toHaveStyle({
+      color: palettes.light.negative,
+    });
+    expect(screen.queryByText('Pendiente')).not.toBeOnTheScreen();
   });
 });
